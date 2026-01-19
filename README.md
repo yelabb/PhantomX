@@ -1,3 +1,6 @@
+> **⚠️ EARLY DEVELOPMENT - EDUCATIONAL PURPOSE ONLY**  
+> This project is in early development and created for personal learning purposes. Not intended for production use.
+
 # PhantomX: LaBraM-POYO Neural Foundation Model
 
 **Population-geometry BCI decoding with electrode-dropout robustness**
@@ -51,7 +54,71 @@ from phantomx.vqvae import VQVAETrainer
 from phantomx.data import MCMazeDataLoader
 
 # Load MC_Maze dataset via PhantomLink
-loader = MCMazeDataLoader("../PhantomLink/data/mc_maze.nwb")
+loader = MCMazeDataLoader("data/mc_maze.nwb")
+
+# Train universal codebook
+trainer = VQVAETrainer(
+    n_channels=142,
+    n_codes=256,
+    embedding_dim=64
+)
+trainer.train(loader, epochs=100)
+trainer.save("models/mc_maze_codebook_256.pt")
+
+# PhantomX: LaBraM-POYO Neural Foundation Model
+
+**Population-geometry BCI decoding with electrode-dropout robustness**
+
+## Overview
+
+PhantomX implements the LaBraM-POYO stack for Brain-Computer Interface neural decoding:
+
+- **POYO Neural Tokenization** (NeurIPS '24): Discrete spike-to-token conversion, invariant to electrode dropout/shift
+- **LaBraM VQ-VAE Pre-training** (ICLR '24): Vector-quantized autoencoder for universal latent neural dynamics codebook, enabling zero-shot decoding
+- **Test-Time Adaptation (TTA)**: Unsupervised entropy minimization for real-time drift correction
+
+## Key Features
+
+✅ **Electrode-dropout robust**: 50% channel loss → system continues working  
+✅ **Zero-shot decoding**: Pre-trained codebook transfers to new sessions without calibration  
+✅ **Population geometry**: Understands neural manifolds, not individual wires  
+✅ **Real-time adaptation**: Online gradient updates counter signal drift  
+
+## Architecture
+
+```
+Spikes [142 channels] 
+    ↓
+POYO Tokenizer (spike → discrete tokens)
+    ↓
+VQ-VAE Encoder (tokens → latent codes)
+    ↓
+Codebook Lookup (codes → quantized embeddings)
+    ↓
+VQ-VAE Decoder (embeddings → kinematics)
+    ↓
+TTA Optimizer (entropy minimization)
+```
+
+## Installation
+
+```bash
+cd PhantomX
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+## Quick Start
+
+### 1. Train VQ-VAE Codebook
+
+```python
+from phantomx.vqvae import VQVAETrainer
+from phantomx.data import MCMazeDataLoader
+
+# Load MC_Maze dataset via PhantomLink
+loader = MCMazeDataLoader("data/mc_maze.nwb")
 
 # Train universal codebook
 trainer = VQVAETrainer(
