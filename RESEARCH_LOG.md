@@ -384,3 +384,92 @@ For BCI applications:
 2. Explore soft-VQ (Gumbel-softmax) for differentiable discretization
 3. Add transformer encoder for longer temporal context
 4. Investigate LaBraM pre-training on large neural datasets
+
+---
+
+## Experiment 10: Extended Architecture Comparison
+**Date**: 2026-01-19
+**Goal**: Compare Progressive VQ-VAE against new architectures
+
+**Models Tested**:
+1. **Progressive VQ-VAE** - MLP encoder, EMA VQ, progressive training
+2. **Transformer VQ-VAE** - Self-attention encoder, EMA VQ
+3. **Gumbel VQ-VAE** - MLP encoder, Gumbel-softmax VQ, end-to-end training
+4. **Transformer + Gumbel** - Self-attention + Gumbel-softmax
+
+**Results**:
+```
+Model                  |       R² |    R² vx |    R² vy |  Codes |     Time
+----------------------------------------------------------------------     
+Progressive            |   0.7143 |   0.7128 |   0.7158 |    218 |   173.9s
+Transformer            |   0.5508 |   0.5257 |   0.5759 |    163 |  1087.6s
+Gumbel                 |  -0.0012 |  -0.0021 |  -0.0003 |      1 |   120.6s
+Transformer+Gumbel     |   0.5312 |   0.5875 |   0.4750 |    N/A |  1901.6s
+```
+
+**Analysis**:
+
+1. **Progressive VQ-VAE remains the best**: R² = 0.71, fastest training (174s)
+   - Progressive training is the key - not architecture complexity
+
+2. **Transformer underperforms**: R² = 0.55, 6x slower
+   - Self-attention doesn't help with 10-step windows (already short)
+   - May need pre-training or longer sequences to benefit
+
+3. **Gumbel VQ fails completely**: R² ≈ 0
+   - End-to-end training causes codebook collapse (1 code!)
+   - Temperature annealing doesn't prevent collapse
+   - Needs progressive training like EMA VQ
+
+4. **Transformer + Gumbel**: R² = 0.53
+   - Better than pure Gumbel but still not competitive
+   - Temperature stuck at 2.0 (not annealing properly)
+
+**Key Insight**:
+The training strategy (progressive) matters more than the architecture.
+Even a simple MLP beats Transformer when properly trained.
+
+### New Components Added
+
+1. **TransformerEncoder** ([models_extended.py](python/phantomx/models_extended.py))
+   - CLS token aggregation
+   - Sinusoidal positional encoding
+   - Multi-head self-attention
+
+2. **GumbelVectorQuantizer** ([models_extended.py](python/phantomx/models_extended.py))
+   - Differentiable soft-to-hard quantization
+   - Temperature annealing
+   - Diversity loss for code usage
+
+3. **Test-Time Adaptation** ([tta.py](python/phantomx/tta.py))
+   - TTAWrapper: Entropy minimization on code assignments
+   - OnlineTTA: Sliding window buffer adaptation
+   - SessionAdapter: Calibration-based adaptation
+
+---
+
+## Final Summary
+
+### Best Configuration
+
+| Component | Choice | Why |
+|-----------|--------|-----|
+| Encoder | MLP (1024→512→256→128) | Simple, fast, effective |
+| VQ Type | EMA | Prevents collapse, stable |
+| Training | Progressive (3-phase) | Prevents interference |
+| Window | 10 steps (250ms) | Optimal temporal context |
+| Codes | 256 | Good balance |
+
+### Performance Achieved
+
+- **R² = 0.71** on MC_Maze velocity decoding
+- **218/256 codes used** (85% utilization)
+- **174 seconds** training time on CPU
+
+### Lessons Learned
+
+1. **Training strategy > Architecture**: Progressive beats end-to-end
+2. **Temporal context is critical**: 250ms history for motor cortex
+3. **POYO trade-off is real**: Permutation invariance hurts velocity decoding
+4. **Codebook collapse is the enemy**: Must use k-means init + EMA updates
+5. **Simple works**: MLP beats Transformer on this task
