@@ -1,7 +1,7 @@
 """
 MC_Maze Dataset Loader
 
-Integrates with PhantomLink's data loader for MC_Maze neural recordings.
+Loads neural recordings directly from NWB files for VQ-VAE training.
 """
 
 import numpy as np
@@ -9,23 +9,105 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from pathlib import Path
 from typing import Optional, Tuple, Dict
-import sys
 
-# Add PhantomLink to path for imports
-sys.path.insert(0, str(Path(__file__).parents[5] / "PhantomLink" / "src"))
-
+# Try to import PyNWB for real data loading
 try:
-    from loader import MCMazeLoader
+    from pynwb import NWBHDF5IO
+    HAS_PYNWB = True
 except ImportError:
-    print("Warning: Could not import MCMazeLoader from PhantomLink. Using mock loader.")
-    MCMazeLoader = None
+    print("Warning: PyNWB not installed. Using mock data.")
+    HAS_PYNWB = False
+
+
+def load_mc_maze_from_nwb(file_path: str, bin_size_ms: float = 25.0) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Load spike counts and kinematics from MC_Maze NWB file.
+    
+    Args:
+        file_path: Path to the NWB file
+        bin_size_ms: Time bin size in milliseconds (default 25ms = 40Hz)
+        
+    Returns:
+        spike_counts: [T, n_channels] binned spike counts
+        kinematics: [T, 4] cursor position and velocity (x, y, vx, vy)
+    """
+    if not HAS_PYNWB:
+        raise ImportError("PyNWB is required for loading NWB files. Install with: pip install pynwb")
+    
+    path = Path(file_path)
+    if not path.exists():
+        raise FileNotFoundError(f"NWB file not found: {file_path}")
+    
+    print(f"Loading NWB file: {file_path}")
+    
+    with NWBHDF5IO(str(path), mode='r', load_namespaces=True) as io:
+        nwb = io.read()
+        
+        # Get neural units
+        units = nwb.units
+        n_channels = len(units.id[:])
+        print(f"  Found {n_channels} neural units")
+        
+        # Get behavior timestamps and data
+        behavior = nwb.processing.get('behavior')
+        if behavior is None:
+            raise RuntimeError("No 'behavior' processing module found")
+        
+        # Get cursor position
+        cursor_pos_container = behavior.data_interfaces.get('cursor_pos')
+        if cursor_pos_container is None:
+            raise RuntimeError("No cursor_pos found in behavior")
+        
+        cursor_pos = cursor_pos_container.data[:]  # [T, 2] (x, y)
+        timestamps = cursor_pos_container.timestamps[:]  # [T]
+        
+        # Get hand velocity
+        hand_vel_container = behavior.data_interfaces.get('hand_vel')
+        if hand_vel_container is not None:
+            hand_vel = hand_vel_container.data[:]  # [T, 2] (vx, vy)
+        else:
+            # Compute velocity from position
+            dt = np.diff(timestamps)
+            dt = np.concatenate([[dt[0]], dt])
+            hand_vel = np.gradient(cursor_pos, timestamps, axis=0)
+        
+        # Combine kinematics: [x, y, vx, vy]
+        kinematics = np.hstack([cursor_pos, hand_vel]).astype(np.float32)
+        
+        duration = timestamps[-1] - timestamps[0]
+        n_bins = int(duration * 1000 / bin_size_ms)
+        print(f"  Duration: {duration:.1f}s, {n_bins} bins at {1000/bin_size_ms:.0f}Hz")
+        
+        # Bin spikes
+        spike_counts = np.zeros((n_bins, n_channels), dtype=np.float32)
+        
+        for unit_idx in range(n_channels):
+            spike_times = units.get_unit_spike_times(unit_idx)
+            if spike_times is not None and len(spike_times) > 0:
+                # Convert spike times to bin indices
+                bin_indices = ((spike_times - timestamps[0]) * 1000 / bin_size_ms).astype(np.int32)
+                bin_indices = np.clip(bin_indices, 0, n_bins - 1)
+                
+                # Count spikes per bin
+                for bin_idx in bin_indices:
+                    spike_counts[bin_idx, unit_idx] += 1
+        
+        # Resample kinematics to match spike bins
+        kin_timestamps = np.linspace(timestamps[0], timestamps[-1], n_bins)
+        kinematics_resampled = np.zeros((n_bins, 4), dtype=np.float32)
+        for i in range(4):
+            kinematics_resampled[:, i] = np.interp(kin_timestamps, timestamps, kinematics[:, i])
+        
+        print(f"  Loaded: spike_counts {spike_counts.shape}, kinematics {kinematics_resampled.shape}")
+        
+        return spike_counts, kinematics_resampled
 
 
 class MCMazeDataset(Dataset):
     """
     PyTorch Dataset for MC_Maze neural recordings.
     
-    Loads spike counts and kinematics from PhantomLink's data loader
+    Loads spike counts and kinematics from NWB file
     and prepares them for VQ-VAE training.
     """
     
@@ -35,7 +117,8 @@ class MCMazeDataset(Dataset):
         tokenizer,
         trial_indices: Optional[list] = None,
         sequence_length: int = 1,
-        transform=None
+        transform=None,
+        use_mock: bool = False
     ):
         """
         Initialize dataset.
@@ -46,6 +129,7 @@ class MCMazeDataset(Dataset):
             trial_indices: Specific trials to use (None = all trials)
             sequence_length: Length of spike sequences (1 = single timestep)
             transform: Optional data transforms
+            use_mock: Force use of mock data (for testing)
         """
         super().__init__()
         
@@ -53,17 +137,26 @@ class MCMazeDataset(Dataset):
         self.sequence_length = sequence_length
         self.transform = transform
         
-        # Load data using PhantomLink's loader
-        if MCMazeLoader is not None:
-            self.loader = MCMazeLoader(data_path)
-            self.spike_counts = self.loader.spike_counts  # [T, 142]
-            self.kinematics = self.loader.get_kinematics()  # [T, 4] (x, y, vx, vy)
-        else:
-            # Mock data for testing without PhantomLink
+        # Load data from NWB file or use mock
+        if use_mock or not HAS_PYNWB or not Path(data_path).exists():
             print("Using mock MC_Maze data")
             T = 11760  # 294s * 40Hz
             self.spike_counts = np.random.poisson(2.0, size=(T, 142)).astype(np.float32)
             self.kinematics = np.random.randn(T, 4).astype(np.float32)
+        else:
+            self.spike_counts, self.kinematics = load_mc_maze_from_nwb(data_path)
+        
+        # Normalize spike counts to zero mean, unit variance per channel
+        self.spike_mean = self.spike_counts.mean(axis=0, keepdims=True)
+        self.spike_std = self.spike_counts.std(axis=0, keepdims=True) + 1e-6
+        self.spike_counts = (self.spike_counts - self.spike_mean) / self.spike_std
+        
+        # Normalize kinematics to zero mean, unit variance per dimension
+        self.kin_mean = self.kinematics.mean(axis=0, keepdims=True)
+        self.kin_std = self.kinematics.std(axis=0, keepdims=True) + 1e-6
+        self.kinematics = (self.kinematics - self.kin_mean) / self.kin_std
+        
+        print(f"  Normalized spike counts: mean={self.spike_counts.mean():.4f}, std={self.spike_counts.std():.4f}")
         
         # Extract velocity components (vx, vy)
         self.velocities = self.kinematics[:, 2:4]  # [T, 2]
@@ -97,6 +190,7 @@ class MCMazeDataset(Dataset):
         
         # Tokenize
         tokens = self.tokenizer.tokenize(spikes)  # [n_tokens]
+
         
         # Get corresponding kinematics
         velocity = self.velocities[idx]  # [2]
