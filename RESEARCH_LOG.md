@@ -205,9 +205,182 @@ to represent the full range of neural-velocity mappings.
 **Goal**: Reduce VQ information bottleneck while maintaining discrete representations
 
 **Modifications**:
-1. Increase codes to 512
-2. Add residual connection around VQ
-3. Lower commitment cost (0.1 instead of 0.25)
-4. Add LayerNorm for training stability
+1. Product Quantization (4 heads × 64 codes = 16M combinations)
+2. Residual VQ (α * z_q + (1-α) * z_e)
+3. Lower commitment cost (0.1)
+4. LayerNorm for training stability
 
-Running...
+**Results**:
+```
+Config               |       R² |    R² vx |    R² vy
+----------------------------------------------------
+ProductVQ (pure)     |   0.5634 |   0.6359 |   0.4910
+ResidualVQ_0.8       |   0.5213 |   0.5669 |   0.4756
+ResidualVQ_0.5       |   0.5356 |   0.6111 |   0.4601
+```
+Best: ProductVQ with 208 unique code combinations
+
+**Analysis**:
+- Product VQ achieves R² = 0.56, slight improvement over single VQ
+- Residual connection actually hurts - suggests discrete representation is valuable
+- 208 unique combinations used (out of 16M possible)
+
+---
+
+## Experiment 7: Richer Temporal Representations
+**Date**: 2026-01-19
+**Goal**: Test different ways to encode temporal information
+
+**Approaches**:
+1. Full temporal (raw 10x142 windows)
+2. Channel temporal (5 bins + stats per channel)
+3. Temporal Conv (1D conv on time axis)
+4. Full temporal + larger codebook (1024 codes, 256-dim)
+
+**Results**:
+```
+Config                 |       R² |    R² vx |    R² vy |  Codes
+----------------------------------------------------------------
+FullTemporal           |   0.5360 |   0.6236 |   0.4483 |      8
+ChannelTemporal        |   0.3277 |   0.2629 |   0.3926 |      7
+TemporalConv           |  -0.0055 |  -0.0098 |  -0.0012 |      1
+FullTemporal_Large     |   0.5554 |   0.5074 |   0.6035 |      8
+```
+
+**Analysis**:
+- **Codebook collapse!** Only 7-8 codes being used out of 512-1024
+- Larger codebook doesn't help without better training
+- Conv encoder completely fails (1 code = all samples same)
+- The VQ layer is a training bottleneck, not a capacity bottleneck
+
+---
+
+## Experiment 8: Addressing Codebook Collapse
+**Date**: 2026-01-19
+**Goal**: Fix codebook collapse with better VQ training techniques
+
+**Approaches**:
+1. EMA VQ (exponential moving average updates, k-means init, dead code revival)
+2. Entropy-regularized VQ (encourage uniform code usage)
+
+**Results**:
+```
+Config               |       R² |    R² vx |    R² vy |  Codes
+--------------------------------------------------------------
+EMA_VQ               |   0.6735 |   0.6834 |   0.6636 |     12
+Entropy_VQ           |   0.5661 |   0.5794 |   0.5528 |      8
+```
+
+**Analysis**:
+- **EMA VQ achieves R² = 0.67!** Significant improvement
+- K-means initialization + EMA updates prevent collapse
+- Still only 12 codes used - need better initialization strategy
+- Entropy regularization destabilizes training
+
+**Key Insight**:
+EMA updates are gentler than gradient descent for codebook learning.
+But we need to initialize from the actual encoder output distribution.
+
+---
+
+## Experiment 9: Progressive Training (BREAKTHROUGH!)
+**Date**: 2026-01-19
+**Goal**: Push to R² ≥ 0.70 with better training strategy
+
+**Approach: Progressive VQ-VAE**
+1. Phase 1: Pre-train encoder without VQ (30 epochs)
+2. Phase 2: Initialize VQ codebook with k-means on encoder outputs
+3. Phase 3: Finetune with VQ enabled (50 epochs)
+
+**Results**:
+```
+============================================================
+EXPERIMENT 9 RESULTS: Progressive VQ-VAE
+============================================================
+Test R² (overall): 0.7038  🎉
+Test R² (vx):      0.6829
+Test R² (vy):      0.7248
+Codes used:        221/256 (86%)
+Code entropy:      6.91 bits (max=7.79)
+```
+
+**Top 10 codes** (well-distributed!):
+```
+Code 211: 3.5%, Code 174: 2.6%, Code 231: 2.4%, Code 230: 2.4%
+Code 40: 2.4%, Code 147: 2.4%, Code 81: 2.4%, Code 58: 2.4%
+```
+
+**Analysis**:
+🎉 **SUCCESS! R² = 0.70 achieved!**
+- Progressive training is the key breakthrough
+- Pre-training lets encoder learn good representations FIRST
+- K-means init ensures codebook covers the learned manifold
+- 221/256 codes used = healthy codebook utilization (86%)
+- Code entropy 6.91/7.79 = well-distributed code usage
+
+**Why Progressive Training Works**:
+1. Encoder converges to useful representation without VQ interference
+2. K-means on converged encoder provides optimal codebook init
+3. Finetuning with VQ preserves encoder quality while learning discretization
+
+---
+
+## Summary: LaBraM-POYO Findings
+
+### Key Discoveries
+
+1. **Temporal Context is Essential**
+   - Single timestep: R² ≈ 0.10
+   - 10 timesteps (250ms): R² ≈ 0.78
+   - Motor cortex encodes velocity through temporal dynamics
+
+2. **POYO Trade-off: Invariance vs. Information**
+   - Full POYO (permutation invariant): R² ≈ 0
+   - Raw spikes (no invariance): R² = 0.78
+   - The sorted order statistics destroy channel identity
+
+3. **VQ-VAE Challenges**
+   - Codebook collapse is a major issue
+   - Standard training uses only 3-8% of codes
+   - EMA + k-means init improves to R² = 0.67
+
+4. **Progressive Training is the Solution**
+   - Pre-train encoder → k-means init → finetune with VQ
+   - Achieves R² = 0.70 with 86% codebook utilization
+   - Preserves encoder quality while adding discretization
+
+### Final Architecture: PhantomX VQ-VAE
+
+```
+Input: Spike counts [10 timesteps × 142 channels]
+   ↓
+Encoder: MLP [1420 → 1024 → 512 → 256 → 128]
+   ↓
+VQ Layer: EMA VQ [256 codes × 128 dim]
+   ↓
+Decoder: MLP [128 → 256 → 128 → 2]
+   ↓
+Output: Velocity [vx, vy]
+```
+
+**Training Recipe**:
+1. Pre-train encoder for 30 epochs (no VQ)
+2. K-means init on encoder outputs
+3. Finetune with VQ for 50 epochs
+4. Cosine annealing LR schedule
+
+### Implications for LaBraM-POYO
+
+The original POYO design trades single-session accuracy for cross-session robustness.
+For BCI applications:
+
+- **If cross-session transfer is critical**: Use original POYO, accept lower R²
+- **If session-specific calibration is OK**: Use temporal windows + Progressive VQ-VAE
+- **Hybrid approach**: Pre-train on POYO for generalization, finetune with channel-specific features
+
+### Future Work
+
+1. Test on multiple sessions to validate transfer learning
+2. Explore soft-VQ (Gumbel-softmax) for differentiable discretization
+3. Add transformer encoder for longer temporal context
+4. Investigate LaBraM pre-training on large neural datasets
