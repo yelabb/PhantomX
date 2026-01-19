@@ -78,4 +78,44 @@ Standard BCI decoders use 10-20 timesteps of history (~250-500ms at 40Hz).
 - Window sizes to test: 5, 10, 20 timesteps (125ms, 250ms, 500ms)
 - Model: MLP on flattened window
 
+**Results**:
+```
+    Window |     MLP R² |    LSTM R²
+----------------------------------------
+      5 (125ms) |     0.5765 |     0.5985
+     10 (250ms) |     0.6834 |     0.7783  ← BEST
+     20 (500ms) |     0.7249 |     0.7614
+```
+
+**Analysis**:
+- **LSTM with 10-step window (250ms) achieves R² = 0.78!** ✓ EXCEEDS 0.7 TARGET
+- Temporal context is CRITICAL - single timestep R² was only 0.10
+- LSTM > MLP, suggesting temporal dynamics matter beyond simple concatenation
+- 250ms is optimal - longer windows may overfit or include irrelevant history
+
+**Key Insight**:
+The MC_Maze data DOES contain strong velocity signal, but it requires:
+1. Full channel identity (not sorted order statistics)
+2. Temporal context (~250ms history)
+
+**Problem for POYO**:
+POYO's permutation-invariant tokenization destroys channel identity.
+But POYO is designed for **cross-session transfer** where electrodes may shift/dropout.
+
+**Challenge**: How to get BOTH permutation invariance AND velocity decoding?
+
+**Next**: Experiment 4 - Test alternative tokenizations that preserve more information
+
+---
+
+## Experiment 4: Channel-Preserving POYO Variants
+**Date**: 2026-01-19
+**Goal**: Design tokenization that balances permutation invariance with velocity decoding
+
+**Approaches to test**:
+1. **Binned Histogram Tokens**: Instead of top-k values, use histogram of spike counts
+2. **Positional POYO**: Add learnable position encodings after sorting
+3. **Channel Groups**: Group channels by brain region, preserve within-group identity
+4. **Temporal Tokens**: Tokenize temporal patterns instead of spatial
+
 Running...
