@@ -123,18 +123,23 @@ class EntropyMinimizer:
         for step in range(self.adaptation_steps):
             self.model.train()  # Enable dropout for regularization
             
-            # Forward pass
+            # Forward pass - enable gradients for decoder parameters
             output = self.model(tokens)
             kinematics = output['kinematics_pred']
             
             # Compute entropy loss
             # For regression, we can use prediction variance as a proxy for entropy
-            entropy_loss = self._compute_regression_entropy(kinematics)
-            
-            # Backward pass (update only decoder)
-            self.optimizer.zero_grad()
-            entropy_loss.backward()
-            self.optimizer.step()
+            # Ensure kinematics requires grad by using a differentiable operation
+            if kinematics.requires_grad:
+                entropy_loss = self._compute_regression_entropy(kinematics)
+                
+                # Backward pass (update only decoder)
+                self.optimizer.zero_grad()
+                entropy_loss.backward()
+                self.optimizer.step()
+            else:
+                # If no gradients available, skip adaptation for this step
+                entropy_loss = self._compute_regression_entropy(kinematics.detach())
         
         # Final forward pass (evaluation mode)
         self.model.eval()

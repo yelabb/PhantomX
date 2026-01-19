@@ -205,7 +205,7 @@ class SpikeTokenizer:
     @classmethod
     def load(cls, path: str) -> "SpikeTokenizer":
         """Load tokenizer state"""
-        state = torch.load(path)
+        state = torch.load(path, map_location='cpu', weights_only=False)
         tokenizer = cls(**state['config'])
         tokenizer.mean = state['mean']
         tokenizer.std = state['std']

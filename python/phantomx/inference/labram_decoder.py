@@ -116,16 +116,18 @@ class LabramDecoder:
         tokens_torch = torch.from_numpy(tokens).long().to(self.device)
         
         # Decode
-        with torch.no_grad():
-            if self.use_tta and self.tta_optimizer is not None:
-                kinematics = self.tta_optimizer.adapt_and_decode(tokens_torch)
-            else:
+        if self.use_tta and self.tta_optimizer is not None:
+            # TTA needs gradients, don't use no_grad
+            kinematics = self.tta_optimizer.adapt_and_decode(tokens_torch)
+            codes = None
+        else:
+            with torch.no_grad():
                 output = self.model(tokens_torch)
                 kinematics = output['kinematics_pred']
                 codes = output['indices'] if return_codes else None
         
         # Convert to numpy
-        kinematics_np = kinematics.cpu().numpy()
+        kinematics_np = kinematics.detach().cpu().numpy()
         
         if not is_batch:
             kinematics_np = kinematics_np[0]
@@ -239,7 +241,7 @@ class LabramDecoder:
         Returns:
             Loaded decoder instance
         """
-        checkpoint = torch.load(path, map_location='cpu')
+        checkpoint = torch.load(path, map_location='cpu', weights_only=False)
         
         # Reconstruct model (architecture must match)
         # TODO: Save model config in checkpoint for full reconstruction
