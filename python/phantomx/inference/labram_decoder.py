@@ -254,8 +254,13 @@ class LabramDecoder:
         )
         model.load_state_dict(checkpoint['model_state_dict'])
         
-        # Reconstruct tokenizer
-        tokenizer = SpikeTokenizer(**checkpoint['tokenizer_state']['config'])
+        # Reconstruct tokenizer - filter only the keys that __init__ accepts
+        config = checkpoint['tokenizer_state']['config']
+        init_keys = {'n_channels', 'quantization_levels', 'use_population_norm', 
+                     'dropout_invariant', 'min_spike_threshold'}
+        filtered_config = {k: v for k, v in config.items() if k in init_keys}
+        
+        tokenizer = SpikeTokenizer(**filtered_config)
         tokenizer.mean = checkpoint['tokenizer_state']['mean']
         tokenizer.std = checkpoint['tokenizer_state']['std']
         tokenizer.is_fitted = checkpoint['tokenizer_state']['is_fitted']

@@ -157,6 +157,7 @@
 **Training:**
 - Einops >= 0.7.0
 - Matplotlib >= 3.7.0
+- tqdm >= 4.66.0
 
 **Integration:**
 - MessagePack >= 1.0.5 (PhantomLink)
@@ -192,4 +193,51 @@
 
 ---
 
-**Status Summary:** ✅ Core implementation complete | 🟡 Validation in progress | ⚪ Future enhancements
+## Version 0.1.1 - Fixes & Tests (2026-01-19)
+
+### Bug Fixes
+
+- ✅ Fixed `torch.load` calls to use `weights_only=False` for numpy array compatibility
+- ✅ Fixed TTA entropy minimizer gradient computation (gradients weren't flowing due to `torch.no_grad` wrapping)
+- ✅ Fixed tokenizer/decoder `load()` methods to filter unexpected config keys
+- ✅ Fixed `LabramDecoder.decode()` to properly handle TTA without `no_grad` wrapper
+
+### Testing & Quality
+
+- ✅ Added comprehensive test suite with 47 unit tests:
+  - `test_tokenizer.py`: SpikeTokenizer, TokenVocabulary, PopulationBinner tests
+  - `test_vqvae.py`: Codebook, Encoder, Decoder, VQ-VAE, Trainer tests
+  - `test_inference.py`: LabramDecoder, EntropyMinimizer, TTAOptimizer tests
+- ✅ Added `conftest.py` with pytest fixtures for reproducibility
+- ✅ Added `pyproject.toml` for modern Python packaging (PEP 621)
+- ✅ All 47 tests passing ✓
+
+### Test Coverage
+
+| Component | Tests | Status |
+|-----------|-------|--------|
+| SpikeTokenizer | 7 tests | ✅ All pass |
+| TokenVocabulary | 4 tests | ✅ All pass |
+| PopulationBinner | 3 tests | ✅ All pass |
+| Codebook/VectorQuantizer | 4 tests | ✅ All pass |
+| Encoder/Decoder | 4 tests | ✅ All pass |
+| VQ-VAE | 6 tests | ✅ All pass |
+| VQVAETrainer | 2 tests | ✅ All pass |
+| LabramDecoder | 8 tests | ✅ All pass |
+| EntropyMinimizer | 4 tests | ✅ All pass |
+| TTAOptimizer | 4 tests | ✅ All pass |
+| Decoder+TTA | 1 test | ✅ All pass |
+
+### How to Run Tests
+
+```bash
+cd PhantomX
+python -m venv .venv
+.venv\Scripts\activate  # Windows
+pip install numpy torch scipy pytest tqdm einops matplotlib
+python -m pytest tests -v
+```
+
+---
+
+**Status Summary:** ✅ Core implementation complete | ✅ Tests passing | 🟡 Validation in progress | ⚪ Future enhancements
