@@ -206,7 +206,14 @@ class SpikeTokenizer:
     def load(cls, path: str) -> "SpikeTokenizer":
         """Load tokenizer state"""
         state = torch.load(path, map_location='cpu', weights_only=False)
-        tokenizer = cls(**state['config'])
+        
+        # Extract only the config keys that __init__ accepts
+        config = state['config']
+        init_keys = {'n_channels', 'quantization_levels', 'use_population_norm', 
+                     'dropout_invariant', 'min_spike_threshold'}
+        filtered_config = {k: v for k, v in config.items() if k in init_keys}
+        
+        tokenizer = cls(**filtered_config)
         tokenizer.mean = state['mean']
         tokenizer.std = state['std']
         tokenizer.is_fitted = state['is_fitted']
