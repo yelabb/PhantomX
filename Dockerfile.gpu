@@ -1,23 +1,37 @@
-FROM ubuntu:22.04
+# PhantomX GPU Training - Minimal, Bulletproof Setup
+FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04
 
-# Install system packages
-RUN apt update -q && apt install -y \
-    python3 python3-pip python3-venv python3-wheel \
-    git nano wget curl \
-    && apt clean && rm -f /var/lib/apt/lists/*_*
+ENV DEBIAN_FRONTEND=noninteractive
 
-ARG NONROOT_USER
-ENV PYTHON_USER=$NONROOT_USER
+# Install Python and essentials
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 python3-pip python3-venv \
+    git wget curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Create unprivileged user
-RUN useradd -ms /bin/bash $PYTHON_USER
+# Create user and workspace
+RUN useradd -ms /bin/bash phantomx
+WORKDIR /home/phantomx
 
-# Copy scripts
-COPY --chmod=0755 ./gpu-entrypoint.sh ./entrypoint.sh
-COPY --chmod=0755 ./gpu-post-init.sh ./post-init.sh
+# Clone project directly from GitHub (open source)
+RUN git clone https://github.com/yelabb/PhantomX.git project \
+    && chown -R phantomx:phantomx project
 
-# Copy experiment files
-COPY --chown=$PYTHON_USER:$PYTHON_USER ./python /app/python
-COPY --chown=$PYTHON_USER:$PYTHON_USER ./requirements.txt /app/requirements.txt
+# Install PyTorch with CUDA
+RUN pip3 install --no-cache-dir \
+    torch torchvision --index-url https://download.pytorch.org/whl/cu121
 
-CMD ["/bin/bash", "-c", "./entrypoint.sh $PYTHON_USER"]
+# Install other dependencies
+RUN pip3 install --no-cache-dir \
+    numpy scipy pynwb h5py einops timm \
+    matplotlib seaborn scikit-learn
+
+# Health check endpoint (required by Fly.io)
+RUN pip3 install --no-cache-dir flask
+
+# Copy startup script
+COPY --chmod=755 start.sh /start.sh
+
+EXPOSE 8888
+
+CMD ["/start.sh"]
