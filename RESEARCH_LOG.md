@@ -5,7 +5,8 @@
 ## Project Goal
 Implement and optimize LaBraM-POYO neural foundation model for BCI velocity decoding.
 
-**Target**: R² ≥ 0.7 on MC_Maze zero-shot velocity decoding
+**Target**: ~~R² ≥ 0.7~~ ✅ Achieved (0.776)  
+**New Target**: R² ≥ 0.80 — Beat raw LSTM baseline
 
 ---
 
