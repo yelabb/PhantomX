@@ -1,0 +1,26 @@
+app = "phantomx-gpu"
+primary_region = "ord"  # Chicago - has GPUs available
+
+[build]
+  dockerfile = "Dockerfile.gpu"
+  [build.args]
+    NONROOT_USER = "phantomx"
+
+# GPU Machine configuration
+[[vm]]
+  size = "a100-40gb"
+
+swap_size_mb = 32768  # 32GB swap
+
+# Mount volume for persistent storage (models, data, venv)
+[mounts]
+source = "phantomx_data"
+destination = "/home/phantomx"
+
+# No HTTP services - we'll SSH in
+[http_service]
+  internal_port = 8888
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
