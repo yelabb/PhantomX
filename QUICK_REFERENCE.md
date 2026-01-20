@@ -12,15 +12,26 @@ pip install -e python/
 
 ## Training
 
+### Local Training
 ```bash
-# Train universal codebook on MC_Maze
-python python/train_labram.py \
-    --data_path ../PhantomLink/data/mc_maze.nwb \
-    --epochs 100 \
-    --batch_size 32 \
-    --num_codes 256 \
-    --save_dir models/
+cd PhantomX/python
+python exp11_close_gap.py  # Latest experiment
 ```
+
+### GPU Training (Fly.io)
+```bash
+# SSH into GPU machine
+flyctl ssh console --app phantomx
+
+# Run experiment
+cd /home/phantomx/project/python
+python3 exp11_close_gap.py
+
+# Update code after GitHub push
+cd /home/phantomx/project && git pull
+```
+
+See [docs/FLY_GPU.md](docs/FLY_GPU.md) for full deployment guide.
 
 ## Zero-Shot Inference
 
@@ -126,15 +137,21 @@ Default hyperparameters:
 
 ## Performance Metrics
 
-### Latency
+### Accuracy (Achieved)
+| Model | R² | R² vx | R² vy | Gap to LSTM |
+|-------|-----|-------|-------|-------------|
+| Residual Gumbel VQ | 0.77 | 0.78 | 0.77 | 0.9% |
+| Raw LSTM (baseline) | 0.78 | - | - | - |
+
+### Training Time (A100 GPU)
+- **Residual Gumbel**: 6.5 min
+- **Product Gumbel**: 7.2 min
+- **Soft Gumbel**: 6.9 min
+
+### Inference Latency
 - **CPU**: ~1-3ms per packet
 - **GPU**: <1ms per packet
 - **With TTA**: +1-2ms overhead
-
-### Accuracy (Expected)
-- **Zero-shot R²**: >0.7 on held-out trials
-- **With TTA**: +20% improvement on drifted data
-- **50% electrode dropout**: >0.6 R²
 
 ## Key Features
 
@@ -187,23 +204,12 @@ if frame_count % 1200 == 0:  # Every 30s at 40Hz
     decoder.reset_tta()
 ```
 
-## Citation
-
-```bibtex
-@software{phantomx2026,
-  title={PhantomX: LaBraM-POYO Neural Foundation Model},
-  author={Youssef El abbassi},
-  year={2026},
-  url={https://github.com/yelabb/PhantomX}
-}
-```
-
 ## Support
 
-- **Documentation**: See [README.md](README.md) for detailed architecture
-- **Integration**: See [PHANTOMLINK_INTEGRATION.md](docs/PHANTOMLINK_INTEGRATION.md)
+- **Research Log**: See [RESEARCH_LOG.md](RESEARCH_LOG.md) for experiment details
+- **GPU Deployment**: See [docs/FLY_GPU.md](docs/FLY_GPU.md)
+- **Integration**: See [docs/PHANTOMLINK_INTEGRATION.md](docs/PHANTOMLINK_INTEGRATION.md)
 - **Examples**: See [notebooks/quick_start.ipynb](notebooks/quick_start.ipynb)
-- **Implementation**: See [IMPLEMENTATION_LOG.md](IMPLEMENTATION_LOG.md)
 
 ---
 

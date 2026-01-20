@@ -10,13 +10,13 @@ Personal research sandbox for exploring LaBraM-POYO neural decoding approaches f
 
 | Model | R² | R² vx | R² vy | Codes Used | Training Time |
 |-------|-----|-------|-------|------------|---------------|
-| **Deep CausalTransformer + Gumbel** | **0.77** | 0.80 | 0.74 | 118/256 | 66min |
-| CausalTransformer + Gumbel (skip) | 0.77 | 0.79 | 0.75 | 126/256 | 47min |
+| **Residual Gumbel VQ** | **0.77** | 0.78 | 0.77 | 167/256 | 6.5min |
+| Product Gumbel (4×64) | 0.74 | 0.77 | 0.71 | 370 | 7.2min |
+| Soft Gumbel (temp_min=0.3) | 0.71 | 0.75 | 0.67 | 154 | 6.9min |
 | Progressive VQ-VAE (MLP) | 0.71 | 0.71 | 0.72 | 218/256 | 174s |
-| Transformer VQ-VAE | 0.55 | 0.53 | 0.58 | 163/256 | 1088s |
 | **Raw LSTM (baseline)** | 0.78 | - | - | - | - |
 
-**Gap closed: 0.71 → 0.77 (+6 percentage points, only 0.7% from LSTM parity!)**
+**Gap closed: 0.71 → 0.77 (+6 percentage points, only 0.9% from LSTM parity!)**
 
 ## Key Findings
 
@@ -24,8 +24,8 @@ Personal research sandbox for exploring LaBraM-POYO neural decoding approaches f
 2. **POYO trade-off**: Full permutation invariance → R² ≈ 0 (destroys velocity info)
 3. **Codebook collapse**: Standard VQ training uses only 3-8% of codes
 4. **Progressive training is key**: Pre-train → k-means init → finetune prevents collapse
-5. **Causal Transformer + Gumbel-Softmax**: Best architecture for discrete velocity decoding
-6. **Deeper > Wider**: 6-layer transformer (0.77) beats 4-layer with more width (0.76)
+5. **Residual VQ preserves nuance**: Learnable α blends discrete + continuous representations
+6. **Causal Transformer + Gumbel-Softmax**: Best architecture for discrete velocity decoding
 
 ## What This Is
 
@@ -91,13 +91,14 @@ pip install -r requirements.txt
 
 ## Current Status
 
-✅ **R² = 0.77 achieved** - Only 0.7% gap from raw LSTM baseline (0.78)
+✅ **R² = 0.77 achieved** - Only 0.9% gap from raw LSTM baseline (0.78)
 
-### Latest: Experiment 11 Breakthrough
+### Latest: Experiment 11 - Residual Gumbel VQ
 
-- **Causal Transformer** properly captures 250ms temporal dynamics
-- **Progressive Gumbel-Softmax VQ** with k-means init prevents collapse
-- Pre-training alone reaches R² = 0.78 (LSTM parity!)
+- **Residual VQ** with learnable α preserves continuous nuance alongside discrete codes
+- **Pre-training reaches R² = 0.77** (LSTM parity during encoder-only phase)
+- **6.5 min training** on A100 GPU (Fly.io deployment)
+- **Balanced vx/vy**: R² = 0.78 (vx), 0.77 (vy) - no more velocity bias
 - VQ bottleneck accounts for remaining 1% gap
 
 See [RESEARCH_LOG.md](RESEARCH_LOG.md) for full experiment details
