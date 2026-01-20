@@ -953,6 +953,121 @@ FSQ skipped all of this, going back to end-to-end training. The result: performa
 
 ---
 
+## Experiment 15: Manifold FSQ-VAE (Triple Loss)
+**Date**: 2026-01-20
+**Goal**: Add dynamics loss to encourage smooth latent trajectories
+
+### Hypothesis
+
+Exp 14's FSQ collapsed to few codes because nothing encouraged **temporal coherence**. Adding a dynamics loss should:
+1. Encourage smooth transitions in latent space
+2. Spread codes across the FSQ hypercube
+3. Reduce overfitting by regularizing the encoder
+
+### Architecture Changes
+
+**Triple Loss Function**:
+$$\mathcal{L} = \mathcal{L}_{velocity} + \lambda_{recon} \cdot \mathcal{L}_{reconstruction} + \lambda_{dyn} \cdot \mathcal{L}_{dynamics}$$
+
+Where:
+- $\mathcal{L}_{dynamics} = ||z_{t+1} - z_t||^2$ (encourage smooth latent trajectories)
+- $\lambda_{recon} = 0.5$, $\lambda_{dyn} = 0.1$
+
+**FSQ Levels**: Changed from `[8,5,5,5]` (1000 codes) → `[6,6,6,6]` (1296 codes)
+
+### Results (on A100 GPU via Fly.io)
+
+```
+======================================================================
+Experiment 15: Manifold FSQ-VAE
+======================================================================
+Device: cuda
+Parameters: 4,491,699
+FSQ Codebook: 1296 codes (levels: (6, 6, 6, 6))
+Loss weights: λ_recon=0.5, λ_dynamics=0.1
+======================================================================
+
+Epoch   1/150 | Loss: 20371.77 | Vel: 20371.44 | Recon: 0.533 | Dyn: 0.648 | Train R²: 0.006 | Val R²: 0.011
+Epoch  50/150 | Loss: 15183.04 | Vel: 15182.89 | Recon: 0.246 | Dyn: 0.230 | Train R²: 0.272 | Val R²: 0.233
+Epoch 100/150 | Loss: 10656.90 | Vel: 10656.76 | Recon: 0.246 | Dyn: 0.198 | Train R²: 0.480 | Val R²: 0.393
+Epoch 150/150 | Loss:  4417.99 | Vel:  4417.85 | Recon: 0.246 | Dyn: 0.129 | Train R²: 0.785 | Val R²: 0.597
+
+======================================================================
+BASELINE COMPARISON
+======================================================================
+LSTM Baseline R²:  0.7800
+Manifold FSQ R²:   0.5973
+======================================================================
+✗ Gap to LSTM: 0.1827 (23.4%)
+======================================================================
+```
+
+### Analysis: DOUBLE FAILURE - "Adding Losses Made It Worse"
+
+**Manifold FSQ-VAE achieved R² = 0.597** - even worse than Exp 14 (0.644)!
+
+#### What Went Wrong
+
+1. **Dynamics Loss Hurts Decoding**
+   - Encouraging smooth latent trajectories ≠ better velocity prediction
+   - Motor cortex activity is NOT smooth - it has rapid transitions
+   - The dynamics loss penalizes the sharp changes that encode velocity!
+
+2. **Loss Competition Intensified**
+   - Now THREE losses compete: velocity, reconstruction, dynamics
+   - Velocity loss is drowned out by auxiliary objectives
+   - Train R² = 0.785, Val R² = 0.597 → 18.8 point gap (worse than Exp 14's 17 points)
+
+3. **FSQ Level Change Didn't Help**
+   - `[6,6,6,6]` (1296 codes) vs `[8,5,5,5]` (1000 codes)
+   - More codes available, but still collapsing to few
+   - The problem isn't codebook size - it's end-to-end training
+
+4. **The Auxiliary Loss Trap**
+   - Each auxiliary loss was meant to "regularize" the encoder
+   - Instead, they pulled the encoder away from the velocity objective
+   - **Lesson**: For supervised tasks, auxiliary losses must align with the target!
+
+#### Exp 14 vs Exp 15 Comparison
+
+| Metric | Exp 14 (FSQ) | Exp 15 (Manifold FSQ) | Delta |
+|--------|--------------|----------------------|-------|
+| Val R² | 0.644 | 0.597 | -4.7% |
+| Train R² | 0.809 | 0.785 | -2.4% |
+| Overfit Gap | 16.5% | 18.8% | +2.3% |
+| Gap to LSTM | 17.5% | 23.4% | +5.9% |
+
+### Key Lesson
+
+**Auxiliary losses must be carefully designed to HELP the main objective, not compete with it.**
+
+The dynamics loss assumed that "smooth latents = good representation". But for velocity decoding:
+- Velocity CHANGES require non-smooth neural activity
+- Penalizing ∥z_{t+1} - z_t∥ penalizes the very signal we need!
+
+### The FSQ Experiment Series: Conclusion
+
+| Experiment | Approach | Val R² | Verdict |
+|------------|----------|--------|--------|
+| Exp 14 | FSQ + Dual-head | 0.644 | ❌ |
+| Exp 15 | FSQ + Triple-loss | 0.597 | ❌❌ |
+
+**FSQ is not the answer for this task.** The experiments confirm:
+1. Progressive training (Exp 9-12) is essential
+2. End-to-end FSQ training causes collapse and overfitting
+3. Auxiliary losses compete with the velocity objective
+4. RVQ-4 remains the best approach (R² = 0.776)
+
+### Recommendation: Abandon FSQ Direction
+
+Return to the winning formula from Exp 12:
+1. **Progressive training**: Pre-train encoder → k-means init → finetune
+2. **RVQ architecture**: Multi-stage quantization
+3. **Single objective**: Focus on velocity MSE
+4. **No auxiliary losses**: They hurt more than help for this task
+
+---
+
 ## Summary: Current Best
 
 | Rank | Model | R² | Gap to LSTM |
@@ -962,3 +1077,4 @@ FSQ skipped all of this, going back to end-to-end training. The result: performa
 | 🥉 | Residual Gumbel (Exp 11) | 0.771 | 1.15% |
 | - | Raw LSTM (baseline) | 0.780 | - |
 | ❌ | FSQ-VAE (Exp 14) | 0.644 | 17.5% |
+| ❌❌ | Manifold FSQ (Exp 15) | 0.597 | 23.4% |
