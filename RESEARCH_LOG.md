@@ -475,3 +475,97 @@ Even a simple MLP beats Transformer when properly trained.
 3. **POYO trade-off is real**: Permutation invariance hurts velocity decoding
 4. **Codebook collapse is the enemy**: Must use k-means init + EMA updates
 5. **Simple works**: MLP beats Transformer on this task
+
+---
+
+## Experiment 11: Beat the LSTM - Architecture Upgrade
+**Date**: 2026-01-19
+**Goal**: Surpass raw LSTM baseline (R² = 0.78) with discrete VQ-VAE
+
+### Hypothesis
+
+The 10% gap between Progressive VQ-VAE (0.71) and raw LSTM (0.78) comes from:
+1. **VQ rigidity**: Hard quantization loses nuance → Use soft Gumbel-Softmax
+2. **MLP temporal modeling**: Can't capture dynamics → Use Causal Transformer
+
+### New Components
+
+**1. Causal Transformer Encoder**
+```
+Input: [B, T, 142 channels]
+  ↓ Linear projection → [B, T, d_model]
+  ↓ + Learnable positional embeddings
+  ↓ N × CausalTransformerBlock (masked self-attention)
+  ↓ Take LAST timestep (contains full causal history)
+  ↓ Output projection → [B, 128]
+```
+
+Key design: Causal masking ensures each position only attends to past, making the final timestep a proper "now" representation.
+
+**2. Progressive Gumbel-Softmax VQ**
+```
+Logits = scale × cosine_similarity(z_e, codebook)
+  ↓ Gumbel-Softmax(logits, temperature)
+  ↓ Soft mixture during training, hard during eval
+  ↓ Temperature anneals: 1.0 → 0.1 over 30 epochs
+```
+
+Key innovation: K-means init AFTER pre-training prevents early collapse.
+
+**3. Skip Connection (optional)**
+```
+Decoder input = concat(z_q, z_e)  # 256-dim
+```
+
+Preserves residual continuous info that VQ might lose.
+
+### Results
+
+```
+Model                                    R²      vx      vy   Codes   Time
+---------------------------------------------------------------------------
+Deep CausalTransformer + Gumbel       0.7727  0.8019  0.7435    118   66min 📈
+CausalTransformer + Gumbel (skip)     0.7695  0.7891  0.7499    126   47min 📈
+Wide CausalTransformer + Gumbel       0.7629  0.7874  0.7383    125   61min 📈
+CausalTransformer + Gumbel (no skip)  0.7605  0.7725  0.7486    116   46min 📈
+---------------------------------------------------------------------------
+Comparison:
+  • Raw LSTM (target):     R² = 0.78
+  • Progressive VQ-VAE:    R² = 0.71
+  • Best new architecture: R² = 0.77 (gap reduced from 7% to 0.7%!)
+```
+
+### Analysis
+
+🎯 **Major progress: 0.71 → 0.77 (+6 percentage points)**
+
+1. **Causal Transformer works**: Attention properly captures 250ms temporal dynamics
+   - Pre-training alone reached R² = 0.78 (matching LSTM!)
+   - VQ bottleneck loses ~1% during finetuning
+
+2. **Progressive Gumbel works**: K-means init + temperature annealing prevents collapse
+   - 118-126 codes used (46-49% utilization)
+   - Temperature anneals smoothly: 1.0 → 0.775 → 0.325 → 0.1
+
+3. **Deeper > Wider**: 6 layers (0.773) beat 4 layers with more width (0.763)
+
+4. **Skip connection helps slightly**: 0.77 vs 0.76 (preserves residual info)
+
+5. **vx decoding is stronger**: R²=0.80 for vx vs 0.74 for vy consistently
+
+### Key Insight
+
+The encoder CAN reach LSTM parity (0.78) during pre-training!
+The remaining gap is purely from the VQ discretization bottleneck.
+
+### Remaining Gap Analysis
+
+To close the final 0.7% gap:
+1. **Softer VQ**: Keep temperature higher, anneal slower
+2. **Larger codebook**: 512 codes instead of 256
+3. **Residual VQ**: Multiple VQ stages for finer quantization
+4. **Longer pre-training**: Let encoder fully converge before VQ
+
+### Files Added
+
+- [exp10_beat_lstm.py](python/exp10_beat_lstm.py): Full experiment with all configurations

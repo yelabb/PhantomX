@@ -13,6 +13,8 @@
 
 PhantomX is an **experimental research sandbox** exploring how to decode **2D hand velocity** from **motor cortex spiking activity** using ideas inspired by **LaBraM** (vector-quantized representations) and **POYO** (tokenizing spikes with robustness goals). The core result reported in this repo is that **training strategy** (especially *progressive training with k-means codebook init*) can make a VQ bottleneck work well: a **Progressive VQ‑VAE** reaches about **R² ≈ 0.71** on MC_Maze velocity decoding while using most of a 256‑code codebook.
 
+**Latest milestone (Exp 11)**: Combining a **Causal Transformer** encoder with **Progressive Gumbel-Softmax** VQ achieves **R² ≈ 0.77**, closing 86% of the gap to raw LSTM (0.78).
+
 If you only remember one idea: **motor cortex decoding needs temporal context**, and **VQ codebooks collapse unless you train them carefully**.
 
 ---
@@ -115,7 +117,14 @@ Takeaway: **strategy beats architecture**.
 - Gumbel-softmax variants collapsed without progressive tricks.
 
 Takeaway: **complexity doesn’t automatically help**.
+### Step F — Beat the LSTM milestone (Experiment 11)
+- Combined **Causal Transformer** encoder with **Progressive Gumbel-Softmax** VQ
+- Key insight: The encoder alone can reach **R² = 0.78** (LSTM parity!) during pre-training
+- After VQ finetuning: **R² = 0.77** (only 0.7% gap remaining!)
+- Deep Causal Transformer (6 layers) performed best
+- Gumbel-Softmax with progressive training prevents collapse (118+ codes used)
 
+Takeaway: **Proper attention + soft quantization closes most of the LSTM gap**.
 ---
 
 ## 5) Repo map: “where do I look for what?”
@@ -130,6 +139,7 @@ Takeaway: **complexity doesn’t automatically help**.
 Most work is under `python/`:
 - `python/phantomx/`: the Python package (models, data loader, tokenizer, TTA)
 - `python/exp*.py`: experiment scripts matching the research log
+  - `exp10_beat_lstm.py`: Causal Transformer + Gumbel-Softmax (R² = 0.77)
 - `python/compare_models.py`: architecture comparison harness
 - `python/train_labram.py` / `python/test_zero_shot.py`: training/testing entrypoints referenced by quick reference
 
@@ -213,6 +223,8 @@ Progressive training + k-means init is the repo’s main antidote.
 - **k-means init**: initialize codebook centers from actual encoder outputs.
 - **Progressive training**: pretrain without VQ → init codebook → finetune with VQ.
 - **TTA (Test-Time Adaptation)**: adapt model online at inference to handle drift.
+- **Causal Transformer**: Transformer with masked attention (each position sees only past).
+- **Gumbel-Softmax**: Differentiable approximation to discrete sampling; allows soft-to-hard annealing.
 
 ---
 

@@ -6,28 +6,33 @@ Personal research sandbox for exploring LaBraM-POYO neural decoding approaches f
 
 ## 🎯 Results
 
-**Target achieved!** R² = 0.71 on MC_Maze velocity decoding with Progressive VQ-VAE
+**Near-parity with raw LSTM!** R² = 0.77 on MC_Maze velocity decoding (target: 0.78)
 
-| Model | R² | Codes Used | Training Time |
-|-------|-----|------------|---------------|
-| Progressive VQ-VAE | **0.71** | 218/256 | 174s |
-| Transformer VQ-VAE | 0.55 | 163/256 | 1088s |
-| Gumbel VQ-VAE | 0.00 | 1/256 | 121s |
-| Baseline (no VQ) | 0.78 | - | - |
+| Model | R² | R² vx | R² vy | Codes Used | Training Time |
+|-------|-----|-------|-------|------------|---------------|
+| **Deep CausalTransformer + Gumbel** | **0.77** | 0.80 | 0.74 | 118/256 | 66min |
+| CausalTransformer + Gumbel (skip) | 0.77 | 0.79 | 0.75 | 126/256 | 47min |
+| Progressive VQ-VAE (MLP) | 0.71 | 0.71 | 0.72 | 218/256 | 174s |
+| Transformer VQ-VAE | 0.55 | 0.53 | 0.58 | 163/256 | 1088s |
+| **Raw LSTM (baseline)** | 0.78 | - | - | - | - |
+
+**Gap closed: 0.71 → 0.77 (+6 percentage points, only 0.7% from LSTM parity!)**
 
 ## Key Findings
 
 1. **Temporal context is essential**: Single timestep R² ≈ 0.10, with 250ms history R² ≈ 0.78
 2. **POYO trade-off**: Full permutation invariance → R² ≈ 0 (destroys velocity info)
 3. **Codebook collapse**: Standard VQ training uses only 3-8% of codes
-4. **Progressive training solves it**: Pre-train → k-means init → finetune achieves 85% codebook utilization
-5. **Training strategy > Architecture**: Simple MLP beats Transformer when properly trained
+4. **Progressive training is key**: Pre-train → k-means init → finetune prevents collapse
+5. **Causal Transformer + Gumbel-Softmax**: Best architecture for discrete velocity decoding
+6. **Deeper > Wider**: 6-layer transformer (0.77) beats 4-layer with more width (0.76)
 
 ## What This Is
 
 An experimental project exploring:
 - VQ-VAE based neural codebooks
 - POYO-style spike tokenization
+- Causal Transformer encoders with Gumbel-Softmax VQ
 - Test-time adaptation for signal drift
 - Zero-shot velocity decoding from motor cortex data
 
@@ -39,16 +44,17 @@ An experimental project exploring:
 
 ```
 python/phantomx/
-    model.py           # ProgressiveVQVAE (final architecture)
-    models_extended.py # TransformerVQVAE, GumbelVQVAE variants
+    model.py           # ProgressiveVQVAE (MLP-based)
+    models_extended.py # CausalTransformerVQVAE, GumbelVQVAE (best performers)
     trainer.py         # ProgressiveTrainer (3-phase training)
     tta.py             # Test-Time Adaptation (TTAWrapper, OnlineTTA)
-    tokenizer.py       # Spike tokenization
-    data.py            # MC_Maze data loading
+    tokenizer/         # Spike tokenization
+    data/              # MC_Maze data loading
 python/
-    compare_models.py  # Run all model comparisons
+    exp10_beat_lstm.py # Latest: CausalTransformer + Gumbel experiments
+    compare_models.py  # Model comparisons
 models/
-    exp9_progressive_vqvae.pt   # Best model (R²=0.71)
+    exp9_progressive_vqvae.pt   # Progressive VQ-VAE (R²=0.71)
     comparison_results.json     # All experiment results
 ```
 
@@ -85,4 +91,13 @@ pip install -r requirements.txt
 
 ## Current Status
 
-✅ **Complete** - See [RESEARCH_LOG.md](RESEARCH_LOG.md) for full experiment details
+✅ **R² = 0.77 achieved** - Only 0.7% gap from raw LSTM baseline (0.78)
+
+### Latest: Experiment 11 Breakthrough
+
+- **Causal Transformer** properly captures 250ms temporal dynamics
+- **Progressive Gumbel-Softmax VQ** with k-means init prevents collapse
+- Pre-training alone reaches R² = 0.78 (LSTM parity!)
+- VQ bottleneck accounts for remaining 1% gap
+
+See [RESEARCH_LOG.md](RESEARCH_LOG.md) for full experiment details
