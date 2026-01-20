@@ -331,7 +331,11 @@ def eval_model(model: nn.Module, loader: DataLoader, device: torch.device) -> fl
     with torch.no_grad():
         for batch in loader:
             output = model(batch["window"].to(device))
-            preds.append(output["velocity_pred"].cpu())
+            # Handle both dict (DistilledRVQModel) and tensor (LSTMBaseline) outputs
+            if isinstance(output, dict):
+                preds.append(output["velocity_pred"].cpu())
+            else:
+                preds.append(output.cpu())
             targets.append(batch["velocity"])
     return r2(torch.cat(preds).numpy(), torch.cat(targets).numpy())
 
