@@ -22,6 +22,7 @@ Personal research sandbox for exploring neural decoding approaches for BCI appli
 | [Progressive VQ-VAE](RESEARCH_LOG.md#experiment-9-progressive-training-breakthrough) | 0.71 | 0.71 | 0.72 | 218 | 174s |
 | [FSQ-VAE](RESEARCH_LOG.md#experiment-14-the-fsq-pivot-) | 0.64 | - | - | ~5 | 150ep |
 | [Manifold FSQ](RESEARCH_LOG.md#experiment-15-manifold-fsq-vae-triple-loss) | 0.60 | - | - | - | 150ep |
+| [Frankenstein](RESEARCH_LOG.md#experiment-16-the-frankenstein-pivot) | ~0.72 | - | - | - | ⏳ |
 | **Raw LSTM (baseline)** | 0.78 | - | - | - | - |
 
 **Pre-training encoder alone: R² = 0.784 (exceeds LSTM!)** — see [Exp 12 analysis](RESEARCH_LOG.md#experiment-12-residual-vector-quantization-rvq)

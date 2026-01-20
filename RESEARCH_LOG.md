@@ -1068,6 +1068,83 @@ Return to the winning formula from Exp 12:
 
 ---
 
+## Experiment 16: The Frankenstein Pivot
+**Date**: 2026-01-20
+**Status**: IN PROGRESS
+**Goal**: Combine Mamba (2s window) + RVQ-4 to break the 0.78 ceiling
+
+### Red Team Critique
+
+1. **FSQ was a theoretical overreach** (Exp 14-15) - too brittle for high-variance regression
+2. **Returning to Exp 12 alone will hit same ceiling** - Transformer only sees 250ms
+3. **The 0.4% gap requires BOTH**: precision (RVQ) AND temporal context (2s window)
+
+### Blue Team Solution: "Frankenstein" Architecture
+
+Combine the best components from each experiment:
+
+| Component | Source | Purpose |
+|-----------|--------|--------|
+| Mamba Encoder (80 bins = 2s) | Exp 13 | Temporal context |
+| RVQ-4 (4 × 128 codes) | Exp 12 | Precision quantization |
+| Stateless Training | Exp 14 | Fixes shuffle bug |
+| Huber Loss | Red Team | Gradient stability |
+| Progressive Training | Exp 9-12 | Pre-train → K-means → Finetune |
+
+### Architecture
+
+```
+Input (2s window) → Mamba Encoder → RVQ-4 → MLP Decoder → Velocity
+```
+
+### Results (on A100 GPU via Fly.io)
+
+```
+[Phase 1] Pre-training Mamba encoder + decoder (no VQ)...
+  Epoch   1: loss=0.2270, val_R²=0.3172 (best=0.3172)
+  Epoch  10: loss=0.0133, val_R²=0.7109 (best=0.7159)
+  Epoch  20: loss=0.0075, val_R²=0.7062 (best=0.7159)
+  ... (in progress)
+```
+
+### Early Analysis: "Context Dilution" Confirmed
+
+**Pre-training peaked at R² = 0.716** and is now showing overfitting:
+- Loss still dropping (0.013 → 0.008)
+- Val R² declining (0.716 → 0.706)
+
+**This matches Exp 13's failure pattern exactly.**
+
+#### Pre-training Ceiling Comparison
+
+| Experiment | Window | Encoder | Pre-train R² |
+|------------|--------|---------|-------------|
+| Exp 11-12 | 250ms | Transformer | **0.784** |
+| Exp 13 | 2s | Mamba | 0.732 |
+| **Exp 16** | **2s** | **Mamba** | **0.716** |
+
+### Emerging Conclusion
+
+The "Context Dilution" hypothesis from Exp 13 is **confirmed**:
+
+1. **250ms is the optimal window** for velocity decoding
+2. **2s windows include irrelevant history** that dilutes the signal
+3. **Mamba's long-range memory doesn't help** when the signal is local
+4. **The Transformer's 250ms focus was correct** - not a limitation
+
+### Key Insight
+
+> **The bottleneck isn't temporal context - it's the VQ discretization.**
+>
+> Exp 12's Transformer pre-training reached R² = 0.784 (exceeds LSTM!).
+> The final gap (0.776 vs 0.780) comes purely from RVQ quantization loss.
+
+### Files Added
+
+- [exp16_frankenstein.py](python/exp16_frankenstein.py): Mamba + RVQ-4 experiment
+
+---
+
 ## Summary: Current Best
 
 | Rank | Model | R² | Gap to LSTM |
@@ -1076,5 +1153,6 @@ Return to the winning formula from Exp 12:
 | 🥈 | Deep CausalTransformer (Exp 11) | 0.773 | 0.90% |
 | 🥉 | Residual Gumbel (Exp 11) | 0.771 | 1.15% |
 | - | Raw LSTM (baseline) | 0.780 | - |
+| ⏳ | Frankenstein (Exp 16) | ~0.72 | ~7.7% (in progress) |
 | ❌ | FSQ-VAE (Exp 14) | 0.644 | 17.5% |
 | ❌❌ | Manifold FSQ (Exp 15) | 0.597 | 23.4% |
