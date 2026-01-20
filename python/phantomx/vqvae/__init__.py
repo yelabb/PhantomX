@@ -15,7 +15,7 @@ from .decoder import KinematicsDecoder
 from .trainer import VQVAETrainer
 
 # FSQ-VAE components (The Pivot)
-from .fsq import FSQ, ResidualFSQ
+from .fsq import FSQ, FiniteScalarQuantization, ResidualFSQ
 from .spike_decoder import SpikeReconstructionDecoder, TokenReconstructionDecoder
 from .fsq_vae import FSQVAE, FSQVAEWithCausalTransformer
 from .fsq_trainer import FSQVAETrainer, compute_baseline_comparison
@@ -30,6 +30,7 @@ __all__ = [
     "VQVAETrainer",
     # FSQ-VAE (The Pivot)
     "FSQ",
+    "FiniteScalarQuantization",
     "ResidualFSQ",
     "SpikeReconstructionDecoder",
     "TokenReconstructionDecoder",
