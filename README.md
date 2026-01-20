@@ -4,7 +4,11 @@
 
 > 📓 **[RESEARCH_LOG.md](RESEARCH_LOG.md)** - Detailed experiment notes, results, and analysis
 
-Personal research sandbox for exploring LaBraM-POYO neural decoding approaches for BCI applications.
+Personal research sandbox for exploring neural decoding approaches for BCI applications.
+
+## Vision
+<img width="450" alt="image" src="https://github.com/user-attachments/assets/af41ec36-29ea-4560-93bc-007247c36227" />
+
 
 ## 🎯 Results
 
@@ -104,3 +108,4 @@ pip install -r requirements.txt
 - VQ bottleneck accounts for remaining 1% gap
 
 See [RESEARCH_LOG.md](RESEARCH_LOG.md) for full experiment details
+
