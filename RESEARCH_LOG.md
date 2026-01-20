@@ -763,3 +763,115 @@ Output: Take last timestep → predict velocity
 2. **Data Augmentation**: Noise injection, time warping
 3. **Longer Pre-training**: Let encoder fully converge (100+ epochs)
 4. **Hybrid Decoder**: LSTM decoder instead of MLP on z_q
+
+---
+
+## Experiment 14: The FSQ Pivot 🔄
+**Date**: 2026-01-20
+**Status**: IMPLEMENTATION COMPLETE - Ready to run
+
+### Red Team Critique (What's Wrong)
+
+After 13 experiments, we've hit the **Voronoi Ceiling** at R² ≈ 0.78. The critique identified three fundamental issues:
+
+#### 1. Categorical vs. Ordinal Mismatch
+- **VQ treats codes as orthogonal categories**: Code 42 has no relation to Code 43
+- **Velocity is ordinal/continuous**: 10cm/s is close to 11cm/s
+- **Result**: Model must "memorize" that Code 42 ≈ 10cm/s, Code 128 ≈ 11cm/s
+- **This is why LSTM wins**: Its continuous hidden state naturally preserves ordinal relationships
+
+#### 2. Supervised Bottleneck Trap
+- Training codebook only for velocity MSE = "discretized velocity lookup table"
+- Not a foundation model - discards all neural variance not correlated with velocity
+- Brittle to distribution shifts, useless for other BCI tasks
+
+#### 3. Mamba Shuffling Suicide (Exp 12-13)
+- `shuffle=True` in DataLoader breaks stateful training!
+- Mamba never learned long-term dynamics - it collapsed into a feed-forward net
+- The "250ms optimal window" conclusion was artifact, not insight
+
+### Blue Team Solution: FSQ + Dual-Head
+
+#### Finite Scalar Quantization (FSQ)
+Replace VQ with topology-preserving quantization:
+
+```python
+# VQ: Learn discrete codebook, find nearest neighbor
+indices = argmin(||z - codebook||)  # Orthogonal codes
+
+# FSQ: Round each dimension to discrete levels
+z_bounded = tanh(z)  # [-1, 1]
+z_quantized = round(z_bounded * levels) / levels  # Ordinal codes!
+```
+
+- FSQ levels `[8, 5, 5, 5]` creates 1000 implicit codes
+- **Topology preserved**: Code `[1,2,0]` is CLOSE to `[1,3,0]`
+- **No codebook collapse**: Uses entire hypercube by design
+- **No commitment loss, EMA, or k-means needed!**
+
+#### Dual-Head Decoder (Information Bottleneck)
+```
+z_q → [Head A: Kinematics] → MSE Loss
+    → [Head B: Spike Reconstruction] → Poisson NLL Loss
+```
+
+**Loss**: $\mathcal{L} = \mathcal{L}_{velocity} + \lambda \cdot \mathcal{L}_{reconstruction}$
+
+- **Head A**: Maximizes $I(Z; Y)$ (velocity prediction)
+- **Head B**: Maintains $I(Z; X)$ (neural information)
+- Prevents encoder from discarding "non-velocity" neural variance
+- Creates TRUE neural state representation, not just velocity proxy
+
+### Implementation
+
+New modules created in `phantomx/vqvae/`:
+
+| File | Description |
+|------|-------------|
+| [fsq.py](python/phantomx/vqvae/fsq.py) | FSQ quantizer (topology-preserving) |
+| [spike_decoder.py](python/phantomx/vqvae/spike_decoder.py) | Spike reconstruction decoder (Poisson NLL) |
+| [fsq_vae.py](python/phantomx/vqvae/fsq_vae.py) | FSQ-VAE with dual-head architecture |
+| [fsq_trainer.py](python/phantomx/vqvae/fsq_trainer.py) | Trainer with combined loss |
+| [exp14_fsq_pivot.py](python/exp14_fsq_pivot.py) | Main experiment script |
+
+### Configuration
+```python
+# FSQ levels: 8×5×5×5 = 1000 codes
+fsq_levels = [8, 5, 5, 5]
+
+# Dual-head loss weight
+reconstruction_weight = 0.5  # λ
+
+# Encoder: Causal Transformer (proven to work)
+d_model = 256
+n_heads = 8
+n_layers = 4
+```
+
+### Ablation Studies Planned
+1. **λ sweep**: [0, 0.1, 0.25, 0.5, 1.0, 2.0] to find optimal balance
+2. **FSQ levels**: Compare code density and dimensionality
+3. **FSQ vs VQ**: Direct comparison on same architecture
+
+### Expected Outcome
+- **Hypothesis**: FSQ's ordinal structure + dual-head regularization will break the Voronoi ceiling
+- **Target**: R² > 0.78 (beat LSTM baseline)
+- **Stretch goal**: R² > 0.80
+
+### Run Command
+```bash
+cd python
+python exp14_fsq_pivot.py
+```
+
+---
+
+## Summary: Current Best
+
+| Rank | Model | R² | Gap to LSTM |
+|------|-------|-----|-------------|
+| 🥇 | RVQ-4 (Exp 12) | 0.776 | 0.43% |
+| 🥈 | Deep CausalTransformer (Exp 11) | 0.773 | 0.90% |
+| 🥉 | Residual Gumbel (Exp 11) | 0.771 | 1.15% |
+| - | Raw LSTM (baseline) | 0.780 | - |
+| 🔄 | **FSQ-VAE (Exp 14)** | **TBD** | **TBD** |
