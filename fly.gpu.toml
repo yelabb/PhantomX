@@ -1,4 +1,4 @@
-app = "phantomx-gpu"
+app = "phantomx"
 primary_region = "ord"  # Chicago - has GPUs available
 
 [build]
