@@ -12,17 +12,17 @@ Personal research sandbox for exploring neural decoding approaches for BCI appli
 
 ## 🎯 Results
 
-**Gap to LSTM: 0.43%** - R² = 0.776 on MC_Maze velocity decoding
+🏆 **Current Winner: [RVQ-4 (Residual Vector Quantization)](RESEARCH_LOG.md#experiment-12-residual-vector-quantization-rvq)** — R² = 0.776, only 0.43% gap to raw LSTM
 
 | Model | R² | R² vx | R² vy | Codes | Time |
 |-------|-----|-------|-------|-------|------|
-| **RVQ-4 (4 layers × 128)** | **0.776** | 0.80 | 0.75 | 454 | 6.2min |
-| Residual Gumbel VQ | 0.771 | 0.78 | 0.77 | 167 | 6.5min |
-| Deep CausalTransformer | 0.773 | 0.80 | 0.74 | 118 | 66min |
-| Progressive VQ-VAE | 0.71 | 0.71 | 0.72 | 218 | 174s |
+| **[RVQ-4](RESEARCH_LOG.md#experiment-12-residual-vector-quantization-rvq)** | **0.776** | 0.80 | 0.75 | 454 | 6.2min |
+| [Deep CausalTransformer](RESEARCH_LOG.md#experiment-11-beat-the-lstm---architecture-upgrade) | 0.773 | 0.80 | 0.74 | 118 | 66min |
+| [Residual Gumbel VQ](RESEARCH_LOG.md#experiment-11-close-the-final-gap) | 0.771 | 0.78 | 0.77 | 167 | 6.5min |
+| [Progressive VQ-VAE](RESEARCH_LOG.md#experiment-9-progressive-training-breakthrough) | 0.71 | 0.71 | 0.72 | 218 | 174s |
 | **Raw LSTM (baseline)** | 0.78 | - | - | - | - |
 
-**Pre-training encoder alone: R² = 0.784 (exceeds LSTM!)**
+**Pre-training encoder alone: R² = 0.784 (exceeds LSTM!)** — see [Exp 12 analysis](RESEARCH_LOG.md#experiment-12-residual-vector-quantization-rvq)
 
 ## Key Findings
 
@@ -97,15 +97,21 @@ pip install -r requirements.txt
 
 ## Current Status
 
-✅ **R² = 0.77 achieved** - Only 0.9% gap from raw LSTM baseline (0.78)
+✅ **R² = 0.776 achieved** - Only 0.43% gap from raw LSTM baseline (0.78)
 
-### Latest: Experiment 11 - Residual Gumbel VQ
+### Latest: Experiment 12 - Residual Vector Quantization (RVQ)
 
-- **Residual VQ** with learnable α preserves continuous nuance alongside discrete codes
-- **Pre-training reaches R² = 0.77** (LSTM parity during encoder-only phase)
-- **6.5 min training** on A100 GPU (Fly.io deployment)
-- **Balanced vx/vy**: R² = 0.78 (vx), 0.77 (vy) - no more velocity bias
-- VQ bottleneck accounts for remaining 1% gap
+- **RVQ-4** (4 layers × 128 codes) breaks the "Voronoi Ceiling"
+- **Pre-training reaches R² = 0.784** (exceeds LSTM!)
+- **6.2 min training** on A100 GPU (Fly.io deployment)
+- **Strong vx decoding**: R² = 0.80 (vx), 0.75 (vy)
+- VQ bottleneck accounts for remaining 0.43% gap
+
+### Failed: Experiment 13 - Wide-Window Mamba
+
+- ❌ 80-bin (2s) context windows **hurt** performance (R² = 0.73)
+- 250ms is the optimal window - more context = more noise
+- Stateless Mamba on long windows doesn't leverage SSM advantages
 
 See [RESEARCH_LOG.md](RESEARCH_LOG.md) for full experiment details
 

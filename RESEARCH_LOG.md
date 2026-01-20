@@ -697,3 +697,69 @@ Output: Take last timestep → predict velocity
 | d_model | 256 | Standard |
 | d_state | 16 | SSM state dimension |
 | stateful | False | Avoid shuffle bugs |
+
+### Results (on A100 GPU via Fly.io)
+
+```
+[Phase 1] Pre-training encoder + decoder (no VQ)...
+  Epoch   1: loss=0.9002, val_R²=0.3219
+  Epoch  10: loss=0.0243, val_R²=0.7051 (best=0.7242)
+  Epoch  20: loss=0.0109, val_R²=0.7217 (best=0.7317)
+  Epoch  30: loss=0.0057, val_R²=0.7211 (best=0.7317)
+  Epoch  40: loss=0.0039, val_R²=0.7205 (best=0.7317)
+
+  ❌ KILLED - Plateaued at R² = 0.73, well below target
+```
+
+### Analysis: FAILURE - "The Context Dilution Trap"
+
+**Pre-training peaked at R² = 0.73** - 5 points BELOW previous experiments (0.78)!
+
+**Root Cause**: More context ≠ better context.
+
+1. **Signal Dilution**: 2 seconds includes irrelevant history (pauses, direction changes)
+2. **250ms is the Sweet Spot**: Exp 3 proved this - 10 bins captures the relevant motor planning window
+3. **Stateless Mamba Handicap**: Without hidden state propagation, Mamba is just a fancy MLP
+4. **Overfitting to Noise**: 80 bins = 8× more parameters to learn, same signal
+
+**The "Context Hammer" Fallacy**:
+- Hypothesis: "More context will solve everything"
+- Reality: Motor cortex velocity encoding is LOCAL (~250ms)
+- Longer windows add noise, not signal
+
+**Comparison**:
+| Experiment | Window | Pre-train R² | Final R² |
+|------------|--------|--------------|----------|
+| Exp 11 (CausalTrans) | 10 bins (250ms) | 0.784 | 0.773 |
+| Exp 12 (RVQ-4) | 10 bins (250ms) | 0.784 | 0.776 |
+| **Exp 13 (Wide Mamba)** | **80 bins (2s)** | **0.732** | **KILLED** |
+
+### Key Lesson
+
+**The right temporal window matters more than model architecture.**
+
+250ms is the optimal window for velocity decoding because:
+- Motor planning happens in ~100-300ms bursts
+- Beyond that, you're seeing the NEXT movement, not the current one
+- Mamba's long-range memory is irrelevant when the signal itself is short-range
+
+### Files Added
+
+- [exp13_wide_window_mamba.py](python/exp13_wide_window_mamba.py): Wide-window Mamba experiment (failed)
+
+---
+
+## Summary: Current Best
+
+| Rank | Model | R² | Gap to LSTM |
+|------|-------|-----|-------------|
+| 🥇 | RVQ-4 (Exp 12) | 0.776 | 0.43% |
+| 🥈 | Deep CausalTransformer (Exp 11) | 0.773 | 0.90% |
+| 🥉 | Residual Gumbel (Exp 11) | 0.771 | 1.15% |
+| - | Raw LSTM (baseline) | 0.780 | - |
+
+**Next Steps to Beat 0.78**:
+1. **Ensemble**: Average RVQ-4 + CausalTransformer predictions
+2. **Data Augmentation**: Noise injection, time warping
+3. **Longer Pre-training**: Let encoder fully converge (100+ epochs)
+4. **Hybrid Decoder**: LSTM decoder instead of MLP on z_q
