@@ -758,6 +758,55 @@ Output: Take last timestep → predict velocity
 | 🥉 | Residual Gumbel (Exp 11) | 0.771 | 1.15% |
 | - | Raw LSTM (baseline) | 0.780 | - |
 
+---
+
+## Experiment 17: Lag-Aware Distilled RVQ-4 (LADR-VQ)
+**Date**: 2026-01-20
+**Status**: IN PROGRESS
+
+### Red-Team Gates (Non-Negotiable)
+
+1. **Benchmark noise**: No “win” unless Student > LSTM across **N=10 seeds** on **identical splits**.
+2. **Protocol parity**: LSTM and VQ models must use the **same windowing** and **lag alignment**.
+3. **Lag sweep required**: Best window/lag claims are invalid without Δ sweep.
+4. **No new quantizer tricks**: Stick to **RVQ-4**; focus on training, not representation roulette.
+
+### Blue-Team Plan
+
+**Thesis**: The teacher already hits **R²=0.784** pre-quantization. Distill that function into RVQ-4 to close the quantization drop.
+
+**Step 0 — Lock Benchmark**
+- Fixed split, preprocessing, windowing, metric code.
+- Run N=10 seeds for: LSTM, Teacher (no VQ), Student (RVQ-4).
+- Report mean ± std R² and paired win-rate.
+
+**Step 1 — Lag Sweep (Δ ∈ −5..+5 bins)**
+- Input: spikes[t−T+1 : t]
+- Target: vel[t + Δ]
+- Evaluate Teacher + LSTM at each Δ
+- Choose Δ* by **best Teacher validation R²**
+
+**Step 2 — Teacher (Continuous)**
+- Same encoder/decoder as Exp 12 (CausalTransformer)
+- MSE/Huber loss, early stop on val R²
+- Save teacher outputs (v_teacher) and optionally z_teacher
+
+**Step 3 — Student (RVQ-4) w/ Distillation**
+- RVQ-4 (4×128) from Exp 12
+- Loss: L = L_gt + α L_distill + β L_lat
+   - α=1.0, β=0.1 (or β=0 if latents are skipped)
+
+**Step 4 — Optional Repair Layer**
+- If plateau persists (~0.776): z_hat = z_q + MLP(z_q) (2 layers, width 128)
+
+**Step 5 — Declare Victory Correctly**
+- Student mean R² > LSTM mean R² at Δ*
+- Student beats LSTM in **majority of seeds**
+
+### Implementation
+
+- [exp17_ladr_vq.py](python/exp17_ladr_vq.py): Lag sweep + distillation + seed sweep runner
+
 **Next Steps to Beat 0.78**:
 1. **Ensemble**: Average RVQ-4 + CausalTransformer predictions
 2. **Data Augmentation**: Noise injection, time warping
