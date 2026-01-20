@@ -5,7 +5,7 @@
 ## Project Goal
 Implement and optimize LaBraM-POYO neural foundation model for BCI velocity decoding.
 
-**Target**: ~~R² ≥ 0.7~~ ✅ Achieved (0.776)  
+**Target**: ~~R² ≥ 0.7~~ ✅ Achieved ([0.776](#experiment-12-residual-vector-quantization-rvq))  
 **New Target**: R² ≥ 0.80 — Beat raw LSTM baseline
 
 ---
