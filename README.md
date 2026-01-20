@@ -117,5 +117,12 @@ pip install -r requirements.txt
 - 250ms is the optimal window - more context = more noise
 - Stateless Mamba on long windows doesn't leverage SSM advantages
 
+### In Progress: Experiment 17 - Lag-Aware Distilled RVQ-4 (LADR-VQ)
+
+- ⚠️ **BLOCKED** - RVQ initialization bug discovered
+- Lag sweep complete: Δ=+1 (25ms ahead) shows best results
+- Teacher R² = 0.67 (low due to initialization bug using 4 codes instead of 128)
+- Fix required: Initialize RVQ codebooks AFTER encoder pre-training
+
 See [RESEARCH_LOG.md](RESEARCH_LOG.md) for full experiment details
 

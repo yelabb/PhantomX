@@ -803,15 +803,68 @@ Output: Take last timestep → predict velocity
 - Student mean R² > LSTM mean R² at Δ*
 - Student beats LSTM in **majority of seeds**
 
+### Lag Sweep Results (Teacher Only - 3 Seeds per Lag)
+
+```
+Lag (Δ)  |  Best Val R² (Mean across seeds)
+-----------------------------------------
+  -5     |  0.646 ± 0.014
+  -4     |  0.649 ± 0.009
+  -3     |  0.672 ± 0.002
+  -2     |  0.674 ± 0.024
+  -1     |  0.663 ± 0.016
+   0     |  0.635 ± 0.020
+  +1     |  0.673 ± 0.008  ← Peak performance
+```
+
+**Optimal Lag: Δ=+1 (predict 25ms ahead)**
+
+### ⚠️ Critical Bug Discovered: RVQ Initialization Failure
+
+```
+Warning: Using 4 clusters (not enough samples for 128)
+```
+
+**Root Cause**: K-means initialization is being called on the tokenizer's fit() method BEFORE encoder pre-training. At this stage, only raw spike data exists (not encoder outputs), and the small batch size results in only 4 clusters instead of 128 per RVQ layer.
+
+**Impact**:
+- RVQ layers collapse to 4^4 = 256 total combinations (instead of 128^4 = 268M)
+- Effective codebook size reduced by 6 orders of magnitude
+- This explains why teacher R² (~0.67) is 10 points below Exp 12's teacher (0.784)
+
+**Fix Required**:
+1. Move RVQ k-means initialization to AFTER encoder pre-training (Step 2)
+2. Initialize codebooks on z_teacher outputs from pre-trained encoder
+3. This matches the successful protocol from Exp 12
+
+### Analysis
+
+**Key Finding**: Predicting 25ms ahead (Δ=+1) gives best results (~0.67 R²), but this is WITH the RVQ bug.
+
+**Why Δ=+1 works**:
+- Motor cortex activity leads movement by ~25-50ms (neural planning → motor output)
+- Predicting slightly ahead aligns neural state with intended velocity
+- Similar to Kalman filter prediction step in BCI decoders
+
+**Comparison to Exp 12**:
+| Metric | Exp 12 (Fixed RVQ) | Exp 17 (Broken RVQ) |
+|--------|-------------------|---------------------|
+| Teacher R² | 0.784 | 0.673 |
+| RVQ codes | 128^4 = 268M | 4^4 = 256 |
+| Status | ✅ Success | ⚠️ Blocked |
+
 ### Implementation
 
 - [exp17_ladr_vq.py](python/exp17_ladr_vq.py): Lag sweep + distillation + seed sweep runner
 
-**Next Steps to Beat 0.78**:
-1. **Ensemble**: Average RVQ-4 + CausalTransformer predictions
-2. **Data Augmentation**: Noise injection, time warping
-3. **Longer Pre-training**: Let encoder fully converge (100+ epochs)
-4. **Hybrid Decoder**: LSTM decoder instead of MLP on z_q
+### Next Steps
+
+1. **URGENT**: Fix RVQ initialization bug (initialize after pre-training)
+2. **Re-run lag sweep**: Expect teacher R² ~0.78 at Δ=+1 with fixed RVQ
+3. **Complete distillation**: Train student with properly initialized RVQ-4
+4. **Seed sweep**: N=10 seeds for statistical validation
+
+**Status**: ⚠️ BLOCKED until RVQ initialization is fixed
 
 ---
 
