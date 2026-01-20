@@ -1,6 +1,6 @@
 # PhantomX Research Log: LaBraM-POYO Exploration
 
-> **[RESEACH_VULGARISATION.md](RESEACH_VULGARISATION.md)** for a beginner-friendly “0 → hero” walkthrough, then come back to this log for the full experiment trail.
+> **[RESEARCH_VULGARISATION.md](RESEARCH_VULGARISATION.md)** for a beginner-friendly “0 → hero” walkthrough, then come back to this log for the full experiment trail.
 
 ## Project Goal
 Implement and optimize LaBraM-POYO neural foundation model for BCI velocity decoding.
