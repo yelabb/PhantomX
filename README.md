@@ -2,6 +2,8 @@
 
 > ⚠️ **Experimental / Learning Project** - Not for production use
 
+> 📓 **[RESEARCH_LOG.md](RESEARCH_LOG.md)** - Detailed experiment notes, results, and analysis
+
 Personal research sandbox for exploring LaBraM-POYO neural decoding approaches for BCI applications.
 
 ## 🎯 Results

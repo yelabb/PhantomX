@@ -325,69 +325,6 @@ Code 40: 2.4%, Code 147: 2.4%, Code 81: 2.4%, Code 58: 2.4%
 2. K-means on converged encoder provides optimal codebook init
 3. Finetuning with VQ preserves encoder quality while learning discretization
 
----
-
-## Summary: LaBraM-POYO Findings
-
-### Key Discoveries
-
-1. **Temporal Context is Essential**
-   - Single timestep: R² ≈ 0.10
-   - 10 timesteps (250ms): R² ≈ 0.78
-   - Motor cortex encodes velocity through temporal dynamics
-
-2. **POYO Trade-off: Invariance vs. Information**
-   - Full POYO (permutation invariant): R² ≈ 0
-   - Raw spikes (no invariance): R² = 0.78
-   - The sorted order statistics destroy channel identity
-
-3. **VQ-VAE Challenges**
-   - Codebook collapse is a major issue
-   - Standard training uses only 3-8% of codes
-   - EMA + k-means init improves to R² = 0.67
-
-4. **Progressive Training is the Solution**
-   - Pre-train encoder → k-means init → finetune with VQ
-   - Achieves R² = 0.70 with 86% codebook utilization
-   - Preserves encoder quality while adding discretization
-
-### Final Architecture: PhantomX VQ-VAE
-
-```
-Input: Spike counts [10 timesteps × 142 channels]
-   ↓
-Encoder: MLP [1420 → 1024 → 512 → 256 → 128]
-   ↓
-VQ Layer: EMA VQ [256 codes × 128 dim]
-   ↓
-Decoder: MLP [128 → 256 → 128 → 2]
-   ↓
-Output: Velocity [vx, vy]
-```
-
-**Training Recipe**:
-1. Pre-train encoder for 30 epochs (no VQ)
-2. K-means init on encoder outputs
-3. Finetune with VQ for 50 epochs
-4. Cosine annealing LR schedule
-
-### Implications for LaBraM-POYO
-
-The original POYO design trades single-session accuracy for cross-session robustness.
-For BCI applications:
-
-- **If cross-session transfer is critical**: Use original POYO, accept lower R²
-- **If session-specific calibration is OK**: Use temporal windows + Progressive VQ-VAE
-- **Hybrid approach**: Pre-train on POYO for generalization, finetune with channel-specific features
-
-### Future Work
-
-1. Test on multiple sessions to validate transfer learning
-2. Explore soft-VQ (Gumbel-softmax) for differentiable discretization
-3. Add transformer encoder for longer temporal context
-4. Investigate LaBraM pre-training on large neural datasets
-
----
 
 ## Experiment 10: Extended Architecture Comparison
 **Date**: 2026-01-19
@@ -447,34 +384,6 @@ Even a simple MLP beats Transformer when properly trained.
    - TTAWrapper: Entropy minimization on code assignments
    - OnlineTTA: Sliding window buffer adaptation
    - SessionAdapter: Calibration-based adaptation
-
----
-
-## Final Summary
-
-### Best Configuration
-
-| Component | Choice | Why |
-|-----------|--------|-----|
-| Encoder | CausalTransformer (6 layers) | Captures temporal dynamics |
-| VQ Type | Residual Gumbel | Preserves nuance with learnable α |
-| Training | Progressive (3-phase) | Prevents collapse |
-| Window | 10 steps (250ms) | Optimal temporal context |
-| Codes | 256 | Good balance |
-
-### Performance Achieved
-
-- **R² = 0.77** on MC_Maze velocity decoding (0.9% from LSTM parity)
-- **167/256 codes used** (65% utilization)
-- **6.5 minutes** training time on A100 GPU
-
-### Lessons Learned
-
-1. **Training strategy > Architecture**: Progressive beats end-to-end
-2. **Temporal context is critical**: 250ms history for motor cortex
-3. **POYO trade-off is real**: Permutation invariance hurts velocity decoding
-4. **Codebook collapse is the enemy**: Must use k-means init + temperature annealing
-5. **Residual VQ preserves nuance**: Learnable α blends discrete + continuous
 
 ---
 
@@ -597,42 +506,7 @@ Comparison:
   • New best:              R² = 0.7709 (gap: 0.9%)
 ```
 
-### Analysis
-
-**Residual Gumbel wins** with R² = 0.7709:
-- Learnable α ≈ 0.52 (keeps ~48% continuous information)
-- Balanced vx/vy: 0.78 vs 0.77 (previous models had vx >> vy gap)
-- 167 codes active (65% utilization)
-
-**Why Residual works**:
-The VQ bottleneck loses nuance. By blending:
-```
-z_out = α × z_q + (1 - α) × z_e
-```
-We get discrete tokens for cross-session transfer PLUS continuous residuals for accuracy.
-
-**Product Gumbel underperforms**:
-- More codes (370) but worse R² (0.74)
-- Likely overfitting to training distribution
-- Product quantization may need more data
-
-**Soft Gumbel worse than expected**:
-- Higher temp_min prevents over-discretization
-- But also prevents codebook from learning sharp boundaries
-
-### Key Insight
-
-The **optimal VQ is not fully discrete**. Residual connection lets the model:
-1. Use codebook for coarse categorical structure
-2. Use continuous residual for fine-grained velocity nuance
-
-This matches intuition: velocity is continuous, but neural patterns have discrete modes.
-
 ### Deployment Notes
 
 Trained on Fly.io A100-40GB GPU:
-- Image build: 7 min (NVIDIA CUDA base + PyTorch)
-- Training: 6.5 min per configuration
-- Total experiment time: ~21 min for all 3 configs
-
 See [docs/FLY_GPU.md](docs/FLY_GPU.md) for deployment commands.
