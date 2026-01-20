@@ -34,7 +34,8 @@ sys.path.insert(0, str(Path(__file__).parent))
 from phantomx.tokenizer import SpikeTokenizer
 from phantomx.data import MCMazeDataset
 
-DATA_PATH = "c:/Users/guzzi/Desktop/Projects/DEV-ACTIF/NeuraLink/PhantomLink/data/raw/mc_maze.nwb"
+# Use relative path from project root
+DATA_PATH = Path(__file__).parent.parent / "data" / "mc_maze.nwb"
 
 
 # ============================================================
@@ -146,8 +147,10 @@ class SoftGumbelVQ(nn.Module):
         self.embeddings.data.copy_(torch.from_numpy(kmeans.cluster_centers_).float())
         self._initialized = True
     
-    def update_temperature(self, epoch: int):
-        progress = min(epoch / self.temp_anneal_epochs, 1.0)
+    def update_temperature(self, epoch: int, max_epochs: int = None):
+        # Use max_epochs if provided, otherwise use temp_anneal_epochs
+        anneal_epochs = max_epochs if max_epochs else self.temp_anneal_epochs
+        progress = min(epoch / anneal_epochs, 1.0)
         temp = self.temp_min + 0.5 * (1.0 - self.temp_min) * (1 + math.cos(math.pi * progress))
         self.temperature.fill_(temp)
     
