@@ -20,6 +20,7 @@ Personal research sandbox for exploring neural decoding approaches for BCI appli
 | [Deep CausalTransformer](RESEARCH_LOG.md#experiment-11-beat-the-lstm---architecture-upgrade) | 0.773 | 0.80 | 0.74 | 118 | 66min |
 | [Residual Gumbel VQ](RESEARCH_LOG.md#experiment-11-close-the-final-gap) | 0.771 | 0.78 | 0.77 | 167 | 6.5min |
 | [Progressive VQ-VAE](RESEARCH_LOG.md#experiment-9-progressive-training-breakthrough) | 0.71 | 0.71 | 0.72 | 218 | 174s |
+| [FSQ-VAE](RESEARCH_LOG.md#experiment-14-the-fsq-pivot-) | 0.64 | - | - | ~5 | 150ep |
 | **Raw LSTM (baseline)** | 0.78 | - | - | - | - |
 
 **Pre-training encoder alone: R² = 0.784 (exceeds LSTM!)** — see [Exp 12 analysis](RESEARCH_LOG.md#experiment-12-residual-vector-quantization-rvq)
@@ -32,6 +33,7 @@ Personal research sandbox for exploring neural decoding approaches for BCI appli
 4. **Progressive training is key**: Pre-train → k-means init → finetune prevents collapse
 5. **Residual VQ breaks Voronoi ceiling**: Multi-stage quantization captures fine details
 6. **RVQ-4 optimal**: 4 layers × 128 codes, more layers = diminishing returns
+7. **FSQ topology doesn't help**: Ordinal code structure underperforms discrete VQ (Exp 14)
 
 ## What This Is
 

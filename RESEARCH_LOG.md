@@ -864,6 +864,93 @@ cd python
 python exp14_fsq_pivot.py
 ```
 
+### Results (on A100 GPU via Fly.io)
+
+```
+======================================================================
+FSQ-VAE Training
+======================================================================
+Device: cuda
+Parameters: 4,553,006
+Codebook size: 1000 (FSQ levels: (8, 5, 5, 5))
+Reconstruction weight (λ): 0.5
+======================================================================
+
+Epoch   1/150 | Loss: 20499.35 | Kin: 20499.10 | Recon: 0.505 | Train R²: 0.008 | Val R²: 0.012 | Perp: 25
+Epoch  50/150 | Loss: 14827.36 | Kin: 14827.24 | Recon: 0.246 | Train R²: 0.284 | Val R²: 0.245 | Perp: 9
+Epoch 100/150 | Loss: 10271.27 | Kin: 10271.15 | Recon: 0.245 | Train R²: 0.500 | Val R²: 0.418 | Perp: 7
+Epoch 150/150 | Loss:  3921.34 | Kin:  3921.22 | Recon: 0.245 | Train R²: 0.809 | Val R²: 0.637 | Perp: 5
+
+==================================================
+BASELINE COMPARISON
+==================================================
+LSTM Baseline R²:  0.7800
+FSQ-VAE R²:        0.6438
+==================================================
+✗ Still below LSTM baseline
+Gap: 0.1362 (17.5% below)
+==================================================
+```
+
+### Analysis: FAILURE - "The Topology Didn't Save Us"
+
+**FSQ-VAE achieved R² = 0.64** - a significant regression from RVQ-4 (0.776)!
+
+#### What Went Wrong
+
+1. **Topology Preservation ≠ Better Decoding**
+   - FSQ's ordinal structure (nearby codes = nearby values) didn't help
+   - The velocity prediction task doesn't need "interpolation" between codes
+   - It needs **precise, learned mappings** that VQ/RVQ provides
+
+2. **Dual-Head Regularization Backfired**
+   - Reconstruction loss ($\lambda = 0.5$) competes with velocity loss
+   - The encoder is forced to preserve ALL neural information, not just velocity-relevant
+   - This is exactly backwards for a velocity decoder!
+
+3. **Low Perplexity (5-9 codes)**
+   - Despite 1000 implicit codes, only ~5-9 are effectively used
+   - FSQ doesn't prevent "mode collapse" to a small region of the hypercube
+   - The "no codebook collapse" claim doesn't hold in practice
+
+4. **No Pre-training Phase**
+   - Unlike RVQ-4 which pre-trains the encoder first
+   - FSQ-VAE tries to learn everything end-to-end
+   - Progressive training was the key insight from Exp 9!
+
+5. **Massive Overfitting**
+   - Train R² = 0.81, Val R² = 0.64 → 17 point gap!
+   - The dual-head architecture has too many parameters (4.5M)
+   - Regularization needed: dropout, weight decay, early stopping
+
+#### Comparison to Previous Approaches
+
+| Model | R² | Approach |
+|-------|-----|----------|
+| RVQ-4 (Exp 12) | 0.776 | Progressive + multi-stage VQ |
+| Deep CausalTransformer (Exp 11) | 0.773 | Progressive + Gumbel VQ |
+| **FSQ-VAE (Exp 14)** | **0.644** | End-to-end + FSQ |
+| Progressive VQ-VAE (Exp 9) | 0.714 | Progressive + EMA VQ |
+
+### Key Lesson
+
+**Progressive training beats clever quantization.**
+
+The breakthrough in Exp 9-12 wasn't from VQ improvements - it was from:
+1. Pre-train encoder WITHOUT discretization
+2. Initialize codebook from encoder outputs
+3. Finetune with VQ enabled
+
+FSQ skipped all of this, going back to end-to-end training. The result: performance worse than Exp 9.
+
+### Salvage Ideas for Exp 15
+
+1. **Progressive FSQ**: Pre-train encoder, then add FSQ finetuning
+2. **Remove Dual-Head**: Focus on velocity loss only
+3. **Reduce λ**: Try λ=0.1 or λ=0 to prioritize velocity
+4. **Add Regularization**: Dropout, layer normalization
+5. **Hybrid**: Use FSQ for first stage, VQ for refinement
+
 ---
 
 ## Summary: Current Best
@@ -874,4 +961,4 @@ python exp14_fsq_pivot.py
 | 🥈 | Deep CausalTransformer (Exp 11) | 0.773 | 0.90% |
 | 🥉 | Residual Gumbel (Exp 11) | 0.771 | 1.15% |
 | - | Raw LSTM (baseline) | 0.780 | - |
-| 🔄 | **FSQ-VAE (Exp 14)** | **TBD** | **TBD** |
+| ❌ | FSQ-VAE (Exp 14) | 0.644 | 17.5% |
