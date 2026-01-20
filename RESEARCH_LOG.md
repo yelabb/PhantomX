@@ -587,3 +587,113 @@ The encoder alone now **beats LSTM**. The remaining gap is purely from VQ discre
 ### Files Added
 
 - [exp12_residual_vq.py](python/exp12_residual_vq.py): Full RVQ experiment
+---
+
+## Experiment 12: Stateful Mamba (S6) + Auxiliary Reconstruction
+**Date**: 2026-01-20
+**Goal**: Replace Transformer with Mamba backbone, add spike reconstruction loss
+
+### Theoretical Motivation (Red Team Critique)
+
+**The "Supervised Bottleneck" Fallacy:**
+Previous VQ-VAE implementations supervised the bottleneck with regression targets, forcing the codebook to act as a "velocity lookup table" rather than a neural feature extractor. This defeats the purpose of a Foundation Model.
+
+**The "Sliding Window" Regression Flaw:**
+- LSTM maintains hidden state across entire session (infinite memory)
+- Causal Transformer resets after each 250ms window (stateless)
+- We replaced a stateful operator with stateless one - regression, not advance
+
+### Architecture (Blue Team Pivot)
+
+1. **Mamba (S6) Backbone**: State-space model with hidden state passed across windows
+2. **Dual-Head Decoder**:
+   - Head A: `z_q → velocity (vx, vy)` [MSE Loss]
+   - Head B: `z_q → spike_reconstruction` [Poisson NLL Loss]
+3. **Combined Loss**: `L_total = L_velocity + λ × L_spikes`
+
+### Results (on A100 GPU via Fly.io)
+
+```
+Configuration: Mamba-4L + λ=0.5
+Parameters: 2,497,679
+
+[Phase 1] Pre-training encoder + decoder (no VQ)...
+  Epoch   1: loss=1.1432, val_R²=0.2229
+  Epoch  10: loss=0.2074, val_R²=0.6318 (best=0.6332)
+  Epoch  20: loss=0.1509, val_R²=0.6142 (best=0.6810)
+  Epoch  30: loss=0.1290, val_R²=0.6438 (best=0.6810)
+  Epoch  40: loss=0.1258, val_R²=0.6556 (best=0.6810)
+
+  Pre-training complete. Best R² = 0.6810  ← REGRESSION from 0.78!
+```
+
+### Analysis: FAILURE - "The Shuffled State Suicide"
+
+**Root Cause**: The Dataloader's `shuffle=True` breaks stateful training!
+
+When passing hidden state `h_t` to `h_{t+1}` across shuffled batches:
+- Batch `i+1` is NOT the temporal successor of batch `i`
+- We're telling the model: "The ending of Trial 54 causes the beginning of Trial 7"
+- This is **causal hallucination**
+
+**The Proof**: 
+- R² = 0.68 aligns with MLP Baseline from Exp 3 (R² = 0.68)
+- Model learned to IGNORE the broken state, becoming pure feed-forward
+- Stuck at the feed-forward ceiling because recurrent state is garbage
+
+**The "Short Sequence" Tax**:
+- Mamba shines on LONG sequences where it compresses history
+- On 10 steps (250ms), SSM overhead provides little benefit over LSTM
+- Using Mamba on 10 steps = buying a Ferrari to drive 5 meters
+
+### Key Lesson
+
+Stateful training across batches requires:
+1. Sequential sampler (not shuffled)
+2. Segment boundaries where hidden state resets
+3. Custom DataLoader logic
+
+This is fragile to implement correctly. Better approach: **see MORE context in a single window**.
+
+### Files Added
+
+- [exp12_mamba_reconstruction.py](python/exp12_mamba_reconstruction.py): Stateful Mamba experiment (failed)
+
+---
+
+## Experiment 13: Wide-Window Mamba ("The Context Hammer")
+**Date**: 2026-01-20
+**Goal**: Use Mamba's linear scaling to process 2-second context windows
+
+### Pivot: Don't Remember History, SEE It
+
+Instead of fragile stateful training, leverage Mamba's true superpower: **Linear Scaling with Context Length**.
+
+**The Strategy**:
+1. Expand window from 10 bins (250ms) → **80 bins (2000ms)**
+2. Process full 2-second context in a SINGLE forward pass
+3. **Stateless training**: Reset Mamba state every batch (h₀ = 0)
+4. Eliminate "Shuffled State" bug entirely
+
+**Why This Works (Theory)**:
+- **Trajectory Completeness**: 250ms is a "glimpse"; 2000ms captures full reach movement
+- **Vanishing Gradient Solution**: LSTMs struggle with 80 steps, Mamba handles it naturally
+- **Computational Efficiency**: Mamba processes 80 steps as efficiently as 10 (linear scaling)
+
+### Architecture
+
+```
+Input: [Batch, 80, 142] (2 seconds of neural activity)
+Backbone: Mamba-6L (stateless, state resets each batch)
+Output: Take last timestep → predict velocity
+```
+
+### Configuration
+
+| Parameter | Value | Rationale |
+|-----------|-------|-----------|
+| window_size | 80 (2000ms) | Full reach movement |
+| num_layers | 6 | Deeper for longer context |
+| d_model | 256 | Standard |
+| d_state | 16 | SSM state dimension |
+| stateful | False | Avoid shuffle bugs |
