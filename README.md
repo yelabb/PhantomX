@@ -8,17 +8,17 @@ Personal research sandbox for exploring LaBraM-POYO neural decoding approaches f
 
 ## 🎯 Results
 
-**Near-parity with raw LSTM!** R² = 0.77 on MC_Maze velocity decoding (target: 0.78)
+**Gap to LSTM: 0.43%** - R² = 0.776 on MC_Maze velocity decoding
 
-| Model | R² | R² vx | R² vy | Codes Used | Training Time |
-|-------|-----|-------|-------|------------|---------------|
-| **Residual Gumbel VQ** | **0.77** | 0.78 | 0.77 | 167/256 | 6.5min |
-| Product Gumbel (4×64) | 0.74 | 0.77 | 0.71 | 370 | 7.2min |
-| Soft Gumbel (temp_min=0.3) | 0.71 | 0.75 | 0.67 | 154 | 6.9min |
-| Progressive VQ-VAE (MLP) | 0.71 | 0.71 | 0.72 | 218/256 | 174s |
+| Model | R² | R² vx | R² vy | Codes | Time |
+|-------|-----|-------|-------|-------|------|
+| **RVQ-4 (4 layers × 128)** | **0.776** | 0.80 | 0.75 | 454 | 6.2min |
+| Residual Gumbel VQ | 0.771 | 0.78 | 0.77 | 167 | 6.5min |
+| Deep CausalTransformer | 0.773 | 0.80 | 0.74 | 118 | 66min |
+| Progressive VQ-VAE | 0.71 | 0.71 | 0.72 | 218 | 174s |
 | **Raw LSTM (baseline)** | 0.78 | - | - | - | - |
 
-**Gap closed: 0.71 → 0.77 (+6 percentage points, only 0.9% from LSTM parity!)**
+**Pre-training encoder alone: R² = 0.784 (exceeds LSTM!)**
 
 ## Key Findings
 
@@ -26,8 +26,8 @@ Personal research sandbox for exploring LaBraM-POYO neural decoding approaches f
 2. **POYO trade-off**: Full permutation invariance → R² ≈ 0 (destroys velocity info)
 3. **Codebook collapse**: Standard VQ training uses only 3-8% of codes
 4. **Progressive training is key**: Pre-train → k-means init → finetune prevents collapse
-5. **Residual VQ preserves nuance**: Learnable α blends discrete + continuous representations
-6. **Causal Transformer + Gumbel-Softmax**: Best architecture for discrete velocity decoding
+5. **Residual VQ breaks Voronoi ceiling**: Multi-stage quantization captures fine details
+6. **RVQ-4 optimal**: 4 layers × 128 codes, more layers = diminishing returns
 
 ## What This Is
 
