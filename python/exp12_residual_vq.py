@@ -298,15 +298,17 @@ class ResidualVectorQuantizer(nn.Module):
     
     def init_from_data(self, z_all: torch.Tensor):
         """Initialize all codebooks from data using residual clustering."""
+        device = z_all.device
         residual = z_all.clone()
         for i, quantizer in enumerate(self.quantizers):
             print(f"    Initializing RVQ layer {i+1}/{self.num_quantizers}...")
             quantizer.init_from_data(residual)
             
-            # Compute residual for next layer
+            # Compute residual for next layer (keep on same device)
             with torch.no_grad():
+                residual = residual.to(device)
                 z_q, new_residual, _ = quantizer(residual)
-                residual = new_residual
+                residual = new_residual.to(device)
     
     def forward(self, z: torch.Tensor) -> tuple:
         """
@@ -617,7 +619,7 @@ def train_rvq_progressive(model, train_loader, val_loader, device,
     with torch.no_grad():
         for batch in train_loader:
             z_e = model.encode(batch['window'].to(device))
-            embeddings.append(z_e.cpu())
+            embeddings.append(z_e)  # Keep on GPU for init
     model.vq.init_from_data(torch.cat(embeddings))
     
     # Phase 3: Fine-tune with RVQ
