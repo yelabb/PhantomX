@@ -10,19 +10,29 @@ PhantomX — Neural Decoding as a Codec: Quantized Latent Representations for Ro
 
 ## 🎯 Results
 
-🏆 **NEW! [Wide Transformer (384, 6L)](RESEARCH_LOG.md#experiment-21b-simplified-super-teacher-no-mamba)** — R² = 0.8064, **BEATS LSTM!** 🎉
+⚠️ **[Exp 23: Statistical Validation IN PROGRESS](RESEARCH_LOG.md#experiment-23-statistical-validation)**
+
+### Preliminary Results (5 seeds)
+
+| Model | R² (mean ± std) | 95% CI | Status |
+|-------|-----------------|--------|--------|
+| Wide Transformer (aug) | 0.7906 ± 0.034 | [0.749, 0.833] | ⚠️ Lower than claimed |
+| LSTM (aug) | ⏳ Running... | — | — |
+| LSTM (no aug) | ⏳ Pending | — | — |
+
+**🔴 Key Finding**: Single-run R² = 0.8064 was likely a lucky seed. True mean ≈ 0.79 with high variance.
+
+### Previous Claims (Single Run)
 
 | Model | R² | Gap to LSTM | Params | Notes |
 |-------|-----|-------------|--------|-------|
-| 🥇 **[Wide Transformer (384, 6L)](RESEARCH_LOG.md#experiment-21b-simplified-super-teacher-no-mamba)** | **0.8064** | **+0.70%** ✅ | 7.3M | Continuous teacher |
-| 🥈 [Max Transformer (512, 10L)](RESEARCH_LOG.md#experiment-21b-simplified-super-teacher-no-mamba) | 0.8052 | +0.54% | 21.3M | Continuous |
+| [Wide Transformer (384, 6L)](RESEARCH_LOG.md#experiment-21b-simplified-super-teacher-no-mamba) | 0.8064* | +0.70%* | 7.3M | *Single run, unvalidated |
+| [Max Transformer (512, 10L)](RESEARCH_LOG.md#experiment-21b-simplified-super-teacher-no-mamba) | 0.8052* | +0.54%* | 21.3M | *Single run |
 | **Raw LSTM (baseline)** | **0.8009** | — | — | — |
 | 🥉 [Distilled RVQ (Exp 19)](RESEARCH_LOG.md#experiment-19-distilled-rvq-combining-best-of-exp-12--exp-18) | 0.784 | -2.6% | — | Best discrete VQ |
 | [RVQ-4 (Exp 12)](RESEARCH_LOG.md#experiment-12-residual-vector-quantization-rvq) | 0.776 | -3.5% | — | Discrete VQ |
-| [Exp 22 Distilled RVQ](RESEARCH_LOG.md#experiment-22-distill-wide-transformer-to-rvq) | 0.741 | -7.9% | — | ❌ Missing augmentation |
-| [Deep CausalTransformer](RESEARCH_LOG.md#experiment-11-beat-the-lstm---architecture-upgrade) | 0.773 | -4.0% | — | Continuous |
 
-**🎯 Next: Exp 22b — Distill WITH augmentation (Exp 22 failed: teacher 0.750 vs 0.806 due to missing augmentation)**
+**🎯 Current: Exp 23 — Statistical validation with 5 seeds per model**
 
 ## Key Findings
 

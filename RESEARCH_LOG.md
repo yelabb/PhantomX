@@ -1848,4 +1848,72 @@ This proves **data augmentation is CRITICAL** for Transformer generalization on 
 3. Distill to RVQ-4 student
 4. Target: Student R² > 0.80 (first discrete model to beat LSTM)
 
+---
+
+## Experiment 23: Statistical Validation
+**Date**: 2026-01-21
+**Goal**: Scientifically validate Wide Transformer as the winner
+
+### Motivation
+
+Exp 21b claimed Wide Transformer (384, 6L) = 0.8064 beats LSTM (0.8009). But:
+- This was a **single run** — could be luck
+- Need **multiple seeds** for statistical significance
+- Need **fair comparison** — run LSTM with same augmentation
+
+### Protocol
+
+1. Run each model **5x** with different random seeds (42, 123, 456, 789, 1337)
+2. Use **IDENTICAL** data augmentation for fair comparison
+3. Report: mean ± std, 95% CI, p-value, effect size (Cohen's d)
+4. Three conditions:
+   - Wide Transformer + augmentation
+   - LSTM + augmentation (fair comparison)
+   - LSTM without augmentation (original baseline)
+
+### Results: IN PROGRESS 🔄
+
+#### Wide Transformer (384, 6L) WITH Augmentation
+
+| Seed | R² | Time |
+|------|-----|------|
+| 42 | 0.7934 | 132s |
+| 123 | 0.8008 | 189s |
+| 456 | **0.8346** | 398s |
+| 789 | 0.7405 | 106s |
+| 1337 | 0.7839 | 296s |
+
+**Summary**:
+- **Mean R²**: 0.7906 ± 0.0339
+- **95% CI**: [0.7485, 0.8327]
+- **Range**: [0.7405, 0.8346]
+
+#### LSTM WITH Augmentation (Fair Comparison)
+
+| Seed | R² | Time |
+|------|-----|------|
+| 42 | ⏳ Running | — |
+| ... | ... | ... |
+
+#### LSTM WITHOUT Augmentation (Original Baseline)
+
+Pending...
+
+### Preliminary Analysis
+
+**🔴 Critical Finding**: The original claim (R² = 0.8064) appears to be a lucky run!
+
+- True mean: **0.7906** (not 0.8064)
+- High variance: σ = 0.034
+- Single-run 0.8346 (seed 456) was an outlier
+
+**Key Question Remaining**: Does LSTM + augmentation also reach ~0.79?
+- If yes → Models are **statistically equivalent**
+- If no → Transformer genuinely better (or worse)
+
+### Files
+
+- [exp23_statistical_validation.py](python/exp23_statistical_validation.py): Multi-seed validation
+- [results/exp23_statistical_validation.json](python/results/exp23_statistical_validation.json): Full results (pending)
+
 **Hypothesis**: With proper augmentation, teacher should reach 0.806 and student should exceed 0.784 (Exp 19), potentially beating LSTM.
