@@ -40,6 +40,8 @@ Personal research sandbox for exploring neural decoding approaches for BCI appli
 9. **Lag tuning (Δ=+1) hurts**: Predicting 25ms ahead decorrelates signal on MC_Maze
 10. **Student can beat teacher**: Exp 19 student (0.783) exceeded teacher (0.780) — RVQ acts as regularizer
 11. **β=0.5 is optimal for distillation**: Exp 20 sweep showed higher β degrades performance (U-shaped curve)
+12. **🔴 Long context (2s) HURTS on MC_Maze**: Exp 21 showed slow pathway degrades R² by 2.8% — no exploitable preparatory dynamics
+13. **250ms is optimal window**: Longer windows add noise, not signal for this dataset
 
 ## What This Is
 

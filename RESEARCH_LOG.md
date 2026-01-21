@@ -1572,3 +1572,101 @@ Teacher R² = 0.7890
 | ⚠️ | LADR-VQ v2 (Exp 18) | 0.695 | 12.8% |
 | ❌ | FSQ-VAE (Exp 14) | 0.644 | 19.2% |
 | ❌❌ | Manifold FSQ (Exp 15) | 0.597 | 25.1% |
+
+---
+
+## 🔴 Red Team Critique: Theoretical Vulnerabilities
+**Date**: 2026-01-21
+
+> *"The first principle is that you must not fool yourself — and you are the easiest person to fool."* — Richard Feynman
+
+### 1. The "Teacher's Ceiling" Fallacy
+
+**The Problem**: By the Data Processing Inequality, a deterministic student cannot contain more information than the teacher. Our Teacher (R² ≈ 0.78) caps the Student.
+
+**Verdict**: Need a **Super-Teacher** that breaks the R² = 0.80 barrier first.
+
+### 2. The "Context Dilution" Misinterpretation
+
+**The Hypothesis**: Motor cortex has "two-speed" dynamics (slow 1-2s intent + fast 250ms execution). We should use hierarchical architecture, not flat long context.
+
+### 3. The Δ=0 Overfitting Risk
+
+**The Risk**: Model may be acting as a "smoother" (exploiting autocorrelation) rather than a true "decoder" (predicting from neural causality).
+
+---
+
+## Experiment 21: Super-Teacher with Hierarchical Two-Speed Architecture
+**Date**: 2026-01-21
+**Goal**: Address all three Red Team critiques — break the 0.80 ceiling
+
+### Architecture
+
+```
+SLOW PATHWAY (2s, Mamba SSM)     →  preparatory state
+        ↓ cross-attention
+FAST PATHWAY (250ms, Transformer) →  motor command
+        ↓ gated fusion
+MLP DECODER → velocity
+```
+
+### Results (Partial - Still Running)
+
+```
+BASELINE: LSTM (Δ=+1): R² = 0.7894
+
+SUPER-TEACHER ABLATIONS:
+                          R²       vs LSTM
+------------------------------------------
+Full Model (slow+fast)    0.7526   -3.7%
+No Slow Pathway           0.7808   -0.9%   ← BEST
+No Cross-Attention        0.7704+  -1.9%
+```
+
+### Analysis: 🔴 SLOW PATHWAY HURTS PERFORMANCE
+
+**Critical Finding**: Removing the slow pathway **improves** R² from 0.753 → 0.781!
+
+This invalidates the "context dilution" hypothesis for MC_Maze:
+
+1. **MC_Maze has no exploitable 2s preparatory dynamics** — velocity decoding is purely reactive
+2. **Mamba adds 1M+ parameters** — more capacity to overfit, less data efficiency
+3. **The 250ms window is optimal** — longer context adds noise, not signal
+
+### Key Insight
+
+> **The "two-speed" hypothesis is wrong for this dataset.**
+>
+> MC_Maze is a simple center-out reaching task. There's no complex movement planning.
+> The LSTM's 250ms window already captures all useful temporal structure.
+
+### Implications for Foundation Model Goals
+
+| Dataset Property | MC_Maze | Ideal Foundation Dataset |
+|-----------------|---------|-------------------------|
+| Planning dynamics | ❌ None | ✅ Variable delays |
+| Context benefit | ❌ 250ms sufficient | ✅ 1-2s helps |
+| Task complexity | Simple reaching | Multi-segment movements |
+
+**Conclusion**: MC_Maze may be the wrong benchmark for testing hierarchical context architectures.
+
+### Files Added
+
+- [exp21_super_teacher.py](python/exp21_super_teacher.py): Hierarchical two-speed architecture
+
+**Status**: ⚠️ Slow pathway HURTS. "No Slow Pathway" ablation is best (R² = 0.781)
+
+---
+
+## Experiment 21b: Simplified Super-Teacher (Planned)
+**Goal**: Drop Mamba, focus on making 250ms Transformer as strong as possible
+
+### Strategy
+
+Since slow pathway hurts, strip it out and focus on:
+1. Deeper/wider Transformer encoder (8-12 layers)
+2. Better regularization (dropout, weight decay sweep)
+3. Data augmentation (noise injection, time warping)
+4. Distillation to RVQ for final model
+
+**Next**: Build exp21b_simplified_teacher.py
