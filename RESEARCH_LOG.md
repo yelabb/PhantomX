@@ -2,11 +2,11 @@
 
 > **[RESEARCH_VULGARISATION.md](RESEARCH_VULGARISATION.md)** for a beginner-friendly “0 → hero” walkthrough, then come back to this log for the full experiment trail.
 
-## Project Goal
-Implement and optimize LaBraM-POYO neural foundation model for BCI velocity decoding.
 
-**Target**: ~~R² ≥ 0.7~~ ✅ Achieved ([0.783](#experiment-19-distilled-rvq-combining-best-of-exp-12--exp-18))  
-**New Target**: R² ≥ 0.80 — Beat raw LSTM baseline (only 0.14% away!)
+**14-minute overview**  that explains PhantomX's core insights in plain language:
+
+[**▶️ Listen: Why 90s Tech Beat Modern Brain AI**](https://casbah.fra1.cdn.digitaloceanspaces.com/Why_90s_Tech_Beat_Modern_Brain_AI.m4a)
+
 
 ---
 

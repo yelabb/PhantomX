@@ -1,7 +1,16 @@
 # PhantomX — Research Vulgarisation (0 → Hero)
 
 
-https://github.com/user-attachments/assets/3c612eac-101e-4784-b703-067c2b1d79b2
+## 
+## 🎧 Audio Introduction
+
+**New to neural decoding?** Listen to this 14-minute overview that explains PhantomX's core insights in plain language:
+
+[**▶️ Listen: Why 90s Tech Beat Modern Brain AI**](https://casbah.fra1.cdn.digitaloceanspaces.com/Why_90s_Tech_Beat_Modern_Brain_AI.m4a)
+
+*Covers: the temporal context breakthrough, why progressive training matters, and how we closed the gap to LSTM baselines.*
+
+---
 
 
 > Goal: help you go from “I’m new” to “I can reproduce results, understand the trade-offs, and extend PhantomX responsibly.”
