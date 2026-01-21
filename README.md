@@ -122,28 +122,24 @@ pip install -r requirements.txt
 
 ## Current Status
 
-✅ **R² = 0.776 achieved** - Only 0.43% gap from raw LSTM baseline (0.78)
+✅ **Exp 23 Complete** — Statistical validation with 5 seeds per model
 
-### Latest: Experiment 12 - Residual Vector Quantization (RVQ)
+### Key Result: LSTM Wins (Practically)
 
-- **RVQ-4** (4 layers × 128 codes) breaks the "Voronoi Ceiling"
-- **Pre-training reaches R² = 0.784** (exceeds LSTM!)
-- **6.2 min training** on A100 GPU (Fly.io deployment)
-- **Strong vx decoding**: R² = 0.80 (vx), 0.75 (vy)
-- VQ bottleneck accounts for remaining 0.43% gap
+| Model | R² (mean ± std) | Stability | Speed |
+|-------|-----------------|-----------|-------|
+| 🏆 **LSTM + Aug** | **0.8015 ± 0.007** | Rock solid | 66s |
+| LSTM (no aug) | 0.7936 ± 0.007 | Solid | 71s |
+| Transformer | 0.7906 ± 0.034 | Unstable | 224s |
 
-### Failed: Experiment 13 - Wide-Window Mamba
+- **Statistical verdict**: ⚠️ Inconclusive (p = 0.44)
+- **Practical verdict**: 🏆 LSTM — 5x more stable, 3.4x faster
 
-- ❌ 80-bin (2s) context windows **hurt** performance (R² = 0.73)
-- 250ms is the optimal window - more context = more noise
-- Stateless Mamba on long windows doesn't leverage SSM advantages
+### Best Discrete Model: Distilled RVQ (Exp 19)
 
-### In Progress: Experiment 17 - Lag-Aware Distilled RVQ-4 (LADR-VQ)
-
-- ⚠️ **BLOCKED** - RVQ initialization bug discovered
-- Lag sweep complete: Δ=+1 (25ms ahead) shows best results
-- Teacher R² = 0.67 (low due to initialization bug using 4 codes instead of 128)
-- Fix required: Initialize RVQ codebooks AFTER encoder pre-training
+- **R² = 0.784** — Best VQ-based model
+- Only 2.2% below LSTM baseline
+- Discrete codebook with excellent utilization
 
 See [RESEARCH_LOG.md](RESEARCH_LOG.md) for full experiment details
 
