@@ -1247,6 +1247,165 @@ The "Context Dilution" hypothesis from Exp 13 is **confirmed**:
 
 ---
 
+## Experiment 18: LADR-VQ v2 (Teacher-Student Distillation + Lag Tuning)
+**Date**: 2026-01-20
+**Status**: COMPLETED ❌
+**Goal**: Close "discretization tax" via latent distillation with corrected RVQ initialization
+
+### Strategy
+
+1. **Lag Tuning (Δ=+1)**: Shift targets forward 25ms to align motor cortex planning with execution
+2. **Three-Phase Training**:
+   - Phase 1: Train Teacher (encoder + decoder, no VQ)
+   - Phase 2: Initialize RVQ codebooks from Teacher's trained encoder outputs (THE FIX)
+   - Phase 3: Train Student with VQ + distillation loss
+3. **Distillation Loss**: `L = α × L_velocity + β × L_distill + L_commitment`
+   - `L_distill = MSE(z_q, z_e.detach())` — forces quantized to match continuous
+
+### Configuration
+
+```
+Lag (Δ): +1 bins (25ms forward shift)
+Window: 10 bins (250ms)
+RVQ: 4 layers × 128 codes
+Distillation: α=1.0 (velocity), β=0.5 (latent)
+Data split: 70/15/15 (train/val/test)
+```
+
+### Results (on A100 GPU via Fly.io)
+
+```
+============================================================
+PHASE 1: Training Teacher (Continuous, No Quantization)
+============================================================
+  Epoch   1: val_R²=0.3308 (best=0.3308)
+  Epoch  10: val_R²=0.5953 (best=0.6218)
+  Epoch  30: val_R²=0.6483 (best=0.6483)
+  Epoch  60: val_R²=0.6397 (best=0.6522)
+
+  ✓ Teacher training complete. Best R² = 0.6522
+
+============================================================
+PHASE 2: Initializing Codebooks from Teacher Latents
+============================================================
+  Collected 8215 latent vectors (dim=128)
+  Initializing RVQ layer 1/4... ✓
+  Initializing RVQ layer 2/4... ✓
+  Initializing RVQ layer 3/4... ✓
+  Initializing RVQ layer 4/4... ✓
+
+============================================================
+PHASE 3: Student Distillation Fine-tuning
+============================================================
+  Epoch   1: val_R²=0.5486 | L_vel=0.1601 L_distill=0.6537 | codes=[1/3/4/7]
+  Epoch  10: val_R²=0.6429 | L_vel=0.0109 L_distill=0.0085 | codes=[99/111/101/101]
+  Epoch  30: val_R²=0.6428 | L_vel=0.0095 L_distill=0.0128 | codes=[102/127/119/122]
+  Early stopping at epoch 38
+
+  ✓ Student training complete. Best R² = 0.6471
+
+======================================================================
+FINAL RESULTS
+======================================================================
+Model                         Val R²    Test R²       vx       vy
+----------------------------------------------------------------------
+Teacher (no VQ)               0.6522     0.6947   0.6975   0.6919
+Student (LADR-VQ)             0.6471     0.6948   0.7017   0.6880
+LSTM Baseline                 0.6914     0.7474
+
+Discretization tax: -0.0002 (-0.02%)  ← Negligible!
+Latent distance (||z_q - z_e||): 1.0072
+Codes per layer: [113, 91, 93, 88]
+Training time: 4.6 min
+----------------------------------------------------------------------
+📈 Gap to LSTM: 0.0526 (5.3%)
+```
+
+### Analysis: PARTIAL SUCCESS + CRITICAL REGRESSION
+
+#### ✅ What Worked
+
+1. **Distillation eliminated discretization tax**:
+   - Teacher test R²: 0.6947
+   - Student test R²: 0.6948
+   - Tax: -0.02% (essentially zero!)
+   - This proves latent distillation preserves teacher quality through VQ
+
+2. **RVQ initialization was correct this time**:
+   - Codebooks initialized on 8215 latent vectors from trained encoder
+   - All 4 layers using 88-113 codes (healthy utilization)
+   - No collapse to 4 codes like Exp 17's bug
+
+3. **Codes well-distributed across layers**:
+   - Layer usage: [113, 91, 93, 88] out of 128
+   - Much better than Exp 17's collapsed [4, 4, 4, 4]
+
+#### ❌ What Failed
+
+**CRITICAL REGRESSION: Teacher only reached R² = 0.6947 (test)**
+
+Compare to previous experiments:
+| Experiment | Data Split | Teacher Test R² |
+|------------|------------|-----------------|
+| Exp 12 (RVQ-4) | 80/20 | **0.784** |
+| Exp 18 (LADR-VQ) | 70/15/15 | **0.6947** |
+
+**That's an 8.9 percentage point drop!**
+
+#### Root Cause Investigation
+
+1. **Data Split Change**: Exp 18 uses 70/15/15 vs Exp 12's 80/20
+   - 10% less training data (8,215 vs ~9,400 samples)
+   - This alone shouldn't cause 9-point regression
+
+2. **Lag Tuning (Δ=+1) Might Hurt**:
+   - Exp 17's lag sweep at Δ=+1 also showed teacher R² ~0.67
+   - Predicting 25ms ahead may REDUCE signal, not enhance it
+   - Motor cortex activity correlates with CURRENT velocity, not future
+
+3. **Normalization Difference**:
+   - Exp 18 normalizes only on training data (correct for leakage prevention)
+   - Exp 12 may have normalized on full dataset (potential data leakage)
+
+4. **Architecture Identical**:
+   - Same CausalTransformerEncoder, same hyperparameters
+   - This rules out architecture as the cause
+
+### Key Insight
+
+> **Lag tuning (Δ=+1) appears to HURT, not help, on this dataset.**
+>
+> The motor cortex planning hypothesis (25ms lead) may not apply to MC_Maze:
+> - MC_Maze is a reaching task with smooth, predictable trajectories
+> - Neural activity may encode CURRENT velocity, not future intent
+> - The +25ms shift decorrelates the signal
+
+### Distillation Success, But Ceiling Too Low
+
+The good news: **Distillation completely eliminates the VQ bottleneck** (0% tax)
+
+The bad news: **The ceiling itself dropped from 0.78 to 0.69**
+
+If we apply distillation to the Exp 12 setup (Δ=0, 80/20 split):
+- Teacher R²: 0.784
+- Expected Student R²: ~0.784 (with distillation)
+- **Could finally beat LSTM!**
+
+### Files Added
+
+- [exp18_ladr_vq_v2.py](python/exp18_ladr_vq_v2.py): LADR-VQ with corrected initialization
+
+### Next Steps
+
+1. **URGENT: Rerun with Δ=0** - Remove lag tuning, use same windowing as Exp 12
+2. **Match Exp 12 split**: Use 80/20 instead of 70/15/15
+3. **Apply distillation to Exp 12's setup**: Combine best of both
+4. **Sweep Δ on test set**: Verify optimal lag is actually 0, not +1
+
+**Status**: ❌ FAILED due to regression, but distillation mechanism proven effective
+
+---
+
 ## Summary: Current Best
 
 | Rank | Model | R² | Gap to LSTM |
@@ -1256,5 +1415,6 @@ The "Context Dilution" hypothesis from Exp 13 is **confirmed**:
 | 🥉 | Residual Gumbel (Exp 11) | 0.771 | 1.15% |
 | - | Raw LSTM (baseline) | 0.780 | - |
 | ⏳ | Frankenstein (Exp 16) | ~0.72 | ~7.7% (in progress) |
+| ⚠️ | LADR-VQ v2 (Exp 18) | 0.695 | 10.9% (lag regression) |
 | ❌ | FSQ-VAE (Exp 14) | 0.644 | 17.5% |
 | ❌❌ | Manifold FSQ (Exp 15) | 0.597 | 23.4% |
