@@ -4,9 +4,10 @@
 
 > 📓 **[RESEARCH_LOG.md](RESEARCH_LOG.md)** - Detailed experiment notes, results, and analysis
 
+
 PhantomX — Neural Decoding as a Codec: Quantized Latent Representations for Robust BCI
 
-<img width="900" alt="image" src="https://github.com/user-attachments/assets/eef898bc-5c79-4ac7-a1e6-d34ec617fa86" />
+<img width="900" alt="image" src="https://github.com/user-attachments/assets/92cc2a54-26c8-48ae-bebb-34bd9925c11d" />
 
 ## 🎯 Results
 
@@ -161,5 +162,6 @@ If you use this work in your research, please cite:
   url = {https://github.com/yelabb/PhantomX}
 }
 ```
+
 
 
