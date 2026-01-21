@@ -1907,7 +1907,18 @@ Exp 21b claimed Wide Transformer (384, 6L) = 0.8064 beats LSTM (0.8009). But:
 
 #### LSTM WITHOUT Augmentation (Original Baseline)
 
-⏳ Pending...
+| Seed | R² | Time |
+|------|-----|------|
+| 42 | 0.8009 | 75s |
+| 123 | 0.8010 | 80s |
+| 456 | 0.7868 | 89s |
+| 789 | 0.7877 | 42s |
+| 1337 | ⏳ Running | — |
+
+**Summary** (4/5 runs):
+- **Mean R²**: ~0.794 ± 0.008
+- **Range**: [0.7868, 0.8010]
+- **Avg Time**: 72s
 
 ### Analysis: 🔴 ORIGINAL CLAIM REFUTED
 

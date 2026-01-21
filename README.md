@@ -17,8 +17,8 @@ PhantomX — Neural Decoding as a Codec: Quantized Latent Representations for Ro
 | Model | R² (mean ± std) | 95% CI | Verdict |
 |-------|-----------------|--------|--------|
 | 🥇 **LSTM (aug)** | **0.8015 ± 0.007** | [0.793, 0.810] | ✅ **WINNER** |
-| 🥈 Wide Transformer (aug) | 0.7906 ± 0.034 | [0.749, 0.833] | ❌ High variance |
-| LSTM (no aug) | ⏳ Pending | — | — |
+| 🥈 LSTM (no aug) | 0.794* ± 0.008 | ⏳ 4/5 runs | Solid baseline |
+| 🥉 Wide Transformer (aug) | 0.7906 ± 0.034 | [0.749, 0.833] | ❌ High variance |
 
 **🔴 Key Finding**: Original claim REFUTED. LSTM beats Transformer when properly validated:
 - LSTM is **1.4% better** (0.8015 vs 0.7906)
