@@ -7,6 +7,9 @@
 
 [**▶️ Listen: Why 90s Tech Beat Modern Brain AI**](https://casbah.fra1.cdn.digitaloceanspaces.com/Why_90s_Tech_Beat_Modern_Brain_AI.m4a)
 
+<img width="1024" height="559" alt="image" src="https://github.com/user-attachments/assets/62e1d776-cb3e-493f-b942-99ad18bcaba1" />
+
+
 
 ---
 
@@ -2048,3 +2051,4 @@ When the true signal is simple:
 - [results/exp23_statistical_validation.json](python/results/exp23_statistical_validation.json): Full results (pending)
 
 **Hypothesis**: With proper augmentation, teacher should reach 0.806 and student should exceed 0.784 (Exp 19), potentially beating LSTM.
+
