@@ -10,6 +10,7 @@ Personal research sandbox for exploring neural decoding approaches for BCI appli
 <img width="450" alt="image" src="https://github.com/user-attachments/assets/af41ec36-29ea-4560-93bc-007247c36227" />
 
 
+
 ## 🎯 Results
 
 🏆 **Current Winner: [RVQ-4 (Residual Vector Quantization)](RESEARCH_LOG.md#experiment-12-residual-vector-quantization-rvq)** — R² = 0.776, only 0.43% gap to raw LSTM
@@ -128,4 +129,6 @@ pip install -r requirements.txt
 - Fix required: Initialize RVQ codebooks AFTER encoder pre-training
 
 See [RESEARCH_LOG.md](RESEARCH_LOG.md) for full experiment details
+
+<img width="900" alt="image" src="https://github.com/user-attachments/assets/eef898bc-5c79-4ac7-a1e6-d34ec617fa86" />
 
