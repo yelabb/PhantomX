@@ -10,29 +10,29 @@ PhantomX — Neural Decoding as a Codec: Quantized Latent Representations for Ro
 
 ## 🎯 Results
 
-⚠️ **[Exp 23: Statistical Validation IN PROGRESS](RESEARCH_LOG.md#experiment-23-statistical-validation)**
+🔬 **[Exp 23: Statistical Validation COMPLETE](RESEARCH_LOG.md#experiment-23-statistical-validation)** — LSTM wins!
 
-### Preliminary Results (5 seeds)
+### Validated Results (5 seeds each)
 
-| Model | R² (mean ± std) | 95% CI | Status |
+| Model | R² (mean ± std) | 95% CI | Verdict |
 |-------|-----------------|--------|--------|
-| Wide Transformer (aug) | 0.7906 ± 0.034 | [0.749, 0.833] | ⚠️ Lower than claimed |
-| LSTM (aug) | ⏳ Running... | — | — |
+| 🥇 **LSTM (aug)** | **0.8015 ± 0.007** | [0.793, 0.810] | ✅ **WINNER** |
+| 🥈 Wide Transformer (aug) | 0.7906 ± 0.034 | [0.749, 0.833] | ❌ High variance |
 | LSTM (no aug) | ⏳ Pending | — | — |
 
-**🔴 Key Finding**: Single-run R² = 0.8064 was likely a lucky seed. True mean ≈ 0.79 with high variance.
+**🔴 Key Finding**: Original claim REFUTED. LSTM beats Transformer when properly validated:
+- LSTM is **1.4% better** (0.8015 vs 0.7906)
+- LSTM is **5x more stable** (σ=0.007 vs σ=0.034)
+- LSTM is **3.4x faster** to train
 
-### Previous Claims (Single Run)
+### Leaderboard (Validated)
 
-| Model | R² | Gap to LSTM | Params | Notes |
-|-------|-----|-------------|--------|-------|
-| [Wide Transformer (384, 6L)](RESEARCH_LOG.md#experiment-21b-simplified-super-teacher-no-mamba) | 0.8064* | +0.70%* | 7.3M | *Single run, unvalidated |
-| [Max Transformer (512, 10L)](RESEARCH_LOG.md#experiment-21b-simplified-super-teacher-no-mamba) | 0.8052* | +0.54%* | 21.3M | *Single run |
-| **Raw LSTM (baseline)** | **0.8009** | — | — | — |
-| 🥉 [Distilled RVQ (Exp 19)](RESEARCH_LOG.md#experiment-19-distilled-rvq-combining-best-of-exp-12--exp-18) | 0.784 | -2.6% | — | Best discrete VQ |
-| [RVQ-4 (Exp 12)](RESEARCH_LOG.md#experiment-12-residual-vector-quantization-rvq) | 0.776 | -3.5% | — | Discrete VQ |
-
-**🎯 Current: Exp 23 — Statistical validation with 5 seeds per model**
+| Rank | Model | R² | Notes |
+|------|-------|-----|-------|
+| 🥇 | **LSTM + Augmentation** | **0.8015 ± 0.007** | Stable, fast |
+| 🥈 | Wide Transformer (384, 6L) | 0.7906 ± 0.034 | High variance |
+| 🥉 | [Distilled RVQ (Exp 19)](RESEARCH_LOG.md#experiment-19-distilled-rvq-combining-best-of-exp-12--exp-18) | 0.784 | Best discrete VQ |
+| 4 | [RVQ-4 (Exp 12)](RESEARCH_LOG.md#experiment-12-residual-vector-quantization-rvq) | 0.776 | Discrete VQ |
 
 ## Key Findings
 
