@@ -6,10 +6,7 @@
 
 Personal research sandbox for exploring neural decoding approaches for BCI applications.
 
-## Vision
-<img width="450" alt="image" src="https://github.com/user-attachments/assets/af41ec36-29ea-4560-93bc-007247c36227" />
-
-
+<img width="900" alt="image" src="https://github.com/user-attachments/assets/eef898bc-5c79-4ac7-a1e6-d34ec617fa86" />
 
 ## 🎯 Results
 
@@ -130,5 +127,8 @@ pip install -r requirements.txt
 
 See [RESEARCH_LOG.md](RESEARCH_LOG.md) for full experiment details
 
-<img width="900" alt="image" src="https://github.com/user-attachments/assets/eef898bc-5c79-4ac7-a1e6-d34ec617fa86" />
+
+## Dream
+<img width="450" alt="image" src="https://github.com/user-attachments/assets/af41ec36-29ea-4560-93bc-007247c36227" />
+
 
