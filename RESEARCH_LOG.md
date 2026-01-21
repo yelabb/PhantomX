@@ -1503,16 +1503,72 @@ Analysis:
 
 ---
 
+---
+
+## Experiment 20: Distillation Weight Sweep (β Tuning)
+**Date**: 2026-01-21
+**Goal**: Find optimal β to close the 0.14% gap to LSTM
+
+### Hypothesis
+
+Exp 19 achieved R² = 0.783 with β = 0.5. Since distillation made the student exceed the teacher, maybe higher β would push further?
+
+### Results
+
+```
+LSTM Baseline R² = 0.7971 (higher than previous runs)
+Teacher R² = 0.7890
+
+β        Student R²    Tax      Gap to LSTM
+----------------------------------------------
+0.25     0.7794        0.96%    1.77%
+0.50     0.7841        0.49%    1.30%  ← BEST
+0.75     0.7787        1.03%    1.84%
+1.00     0.7796        0.94%    1.75%
+1.50     0.7755        1.35%    2.15%
+2.00     0.7764        1.26%    2.06%
+3.00     (stopped - trend clear)
+```
+
+### Analysis: U-Shaped Curve
+
+1. **β = 0.5 is already optimal** — both lower and higher values degrade performance
+2. **Teacher ceiling is the real bottleneck** — Teacher R² = 0.789, can't exceed this
+3. **Higher β overfits to latent matching** — sacrifices velocity prediction quality
+4. **Lower β loses distillation benefit** — student drifts from teacher's good latent space
+
+### Key Insight
+
+> **β tuning alone cannot close the gap.**
+>
+> The problem is not the distillation weight — it's the teacher's ceiling (R² = 0.789).
+> To beat LSTM (R² = 0.797), we need to improve the teacher first.
+
+### Files Added
+
+- [exp20_distill_sweep.py](python/exp20_distill_sweep.py): β sweep from 0.25 to 3.0
+
+### Next Steps
+
+1. **Dequant repair MLP**: Add small network after RVQ to fix quantization artifacts
+2. **Ensemble Student + LSTM**: Average predictions from both models
+3. **Improve the Teacher**: Deeper/wider encoder, different architecture
+4. **More RVQ layers**: 6-8 layers for finer residuals
+
+**Status**: ❌ β tuning did not close gap. Best remains β=0.5 (R² = 0.784)
+
+---
+
 ## Summary: Current Best
 
 | Rank | Model | R² | Gap to LSTM |
 |------|-------|-----|-------------|
-| 🥇 | **Distilled RVQ (Exp 19)** | **0.783** | **0.14%** |
-| 🥈 | RVQ-4 (Exp 12) | 0.776 | 0.51% |
-| 🥉 | Deep CausalTransformer (Exp 11) | 0.773 | 0.90% |
-| 4 | Residual Gumbel (Exp 11) | 0.771 | 1.15% |
-| - | Raw LSTM (baseline) | 0.784 | - |
-| ⏳ | Frankenstein (Exp 16) | ~0.72 | ~8.2% (in progress) |
-| ⚠️ | LADR-VQ v2 (Exp 18) | 0.695 | 11.4% (lag regression) |
-| ❌ | FSQ-VAE (Exp 14) | 0.644 | 17.9% |
-| ❌❌ | Manifold FSQ (Exp 15) | 0.597 | 23.9% |
+| 🥇 | **Distilled RVQ (Exp 19/20)** | **0.784** | **1.3%** |
+| 🥈 | RVQ-4 (Exp 12) | 0.776 | 2.6% |
+| 🥉 | Deep CausalTransformer (Exp 11) | 0.773 | 3.0% |
+| 4 | Residual Gumbel (Exp 11) | 0.771 | 3.3% |
+| - | Raw LSTM (baseline) | 0.797 | - |
+| ⏳ | Frankenstein (Exp 16) | ~0.72 | ~9.7% |
+| ⚠️ | LADR-VQ v2 (Exp 18) | 0.695 | 12.8% |
+| ❌ | FSQ-VAE (Exp 14) | 0.644 | 19.2% |
+| ❌❌ | Manifold FSQ (Exp 15) | 0.597 | 25.1% |
