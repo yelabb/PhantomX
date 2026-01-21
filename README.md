@@ -10,11 +10,12 @@ Personal research sandbox for exploring neural decoding approaches for BCI appli
 
 ## 🎯 Results
 
-🏆 **Current Winner: [RVQ-4 (Residual Vector Quantization)](RESEARCH_LOG.md#experiment-12-residual-vector-quantization-rvq)** — R² = 0.776, only 0.43% gap to raw LSTM
+🏆 **Current Winner: [Distilled RVQ](RESEARCH_LOG.md#experiment-19-distilled-rvq-combining-best-of-exp-12--exp-18)** — R² = 0.783, only 0.14% gap to raw LSTM!
 
 | Model | R² | R² vx | R² vy | Codes | Time |
 |-------|-----|-------|-------|-------|------|
-| **[RVQ-4](RESEARCH_LOG.md#experiment-12-residual-vector-quantization-rvq)** | **0.776** | 0.80 | 0.75 | 454 | 6.2min |
+| **[Distilled RVQ](RESEARCH_LOG.md#experiment-19-distilled-rvq-combining-best-of-exp-12--exp-18)** | **0.783** | 0.82 | 0.75 | 449 | 4.2min |
+| [RVQ-4](RESEARCH_LOG.md#experiment-12-residual-vector-quantization-rvq) | 0.776 | 0.80 | 0.75 | 454 | 6.2min |
 | [Deep CausalTransformer](RESEARCH_LOG.md#experiment-11-beat-the-lstm---architecture-upgrade) | 0.773 | 0.80 | 0.74 | 118 | 66min |
 | [Residual Gumbel VQ](RESEARCH_LOG.md#experiment-11-close-the-final-gap) | 0.771 | 0.78 | 0.77 | 167 | 6.5min |
 | [Progressive VQ-VAE](RESEARCH_LOG.md#experiment-9-progressive-training-breakthrough) | 0.71 | 0.71 | 0.72 | 218 | 174s |
@@ -22,7 +23,7 @@ Personal research sandbox for exploring neural decoding approaches for BCI appli
 | [FSQ-VAE](RESEARCH_LOG.md#experiment-14-the-fsq-pivot-) | 0.64 | - | - | ~5 | 150ep |
 | [Manifold FSQ](RESEARCH_LOG.md#experiment-15-manifold-fsq-vae-triple-loss) | 0.60 | - | - | - | 150ep |
 | [Frankenstein](RESEARCH_LOG.md#experiment-16-the-frankenstein-pivot) | ~0.72 | - | - | - | ⏳ |
-| **Raw LSTM (baseline)** | 0.78 | - | - | - | - |
+| **Raw LSTM (baseline)** | 0.784 | - | - | - | - |
 
 **Pre-training encoder alone: R² = 0.784 (exceeds LSTM!)** — see [Exp 12 analysis](RESEARCH_LOG.md#experiment-12-residual-vector-quantization-rvq)
 
@@ -35,8 +36,9 @@ Personal research sandbox for exploring neural decoding approaches for BCI appli
 5. **Residual VQ breaks Voronoi ceiling**: Multi-stage quantization captures fine details
 6. **RVQ-4 optimal**: 4 layers × 128 codes, more layers = diminishing returns
 7. **FSQ topology doesn't help**: Ordinal code structure underperforms discrete VQ (Exp 14)
-8. **Distillation eliminates VQ tax**: Exp 18 proved 0% discretization loss with latent distillation
+8. **Distillation eliminates VQ tax**: Exp 18/19 proved 0% discretization loss with latent distillation
 9. **Lag tuning (Δ=+1) hurts**: Predicting 25ms ahead decorrelates signal on MC_Maze
+10. **Student can beat teacher**: Exp 19 student (0.783) exceeded teacher (0.780) — RVQ acts as regularizer
 
 ## What This Is
 
