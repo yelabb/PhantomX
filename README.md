@@ -4,28 +4,24 @@
 
 > 📓 **[RESEARCH_LOG.md](RESEARCH_LOG.md)** - Detailed experiment notes, results, and analysis
 
-Personal research sandbox for exploring neural decoding approaches for BCI applications.
+PhantomX — Neural Decoding as a Codec: Quantized Latent Representations for Robust BCI
 
 <img width="900" alt="image" src="https://github.com/user-attachments/assets/eef898bc-5c79-4ac7-a1e6-d34ec617fa86" />
 
 ## 🎯 Results
 
-🏆 **Current Winner: [Distilled RVQ](RESEARCH_LOG.md#experiment-19-distilled-rvq-combining-best-of-exp-12--exp-18)** — R² = 0.784, best discrete VQ model!
+🏆 **NEW! [Wide Transformer (384, 6L)](RESEARCH_LOG.md#experiment-21b-simplified-super-teacher-no-mamba)** — R² = 0.8064, **BEATS LSTM!** 🎉
 
-| Model | R² | R² vx | R² vy | Codes | Time |
-|-------|-----|-------|-------|-------|------|
-| **[Distilled RVQ](RESEARCH_LOG.md#experiment-19-distilled-rvq-combining-best-of-exp-12--exp-18)** | **0.784** | 0.82 | 0.75 | 449 | 4.2min |
-| [RVQ-4](RESEARCH_LOG.md#experiment-12-residual-vector-quantization-rvq) | 0.776 | 0.80 | 0.75 | 454 | 6.2min |
-| [Deep CausalTransformer](RESEARCH_LOG.md#experiment-11-beat-the-lstm---architecture-upgrade) | 0.773 | 0.80 | 0.74 | 118 | 66min |
-| [Residual Gumbel VQ](RESEARCH_LOG.md#experiment-11-close-the-final-gap) | 0.771 | 0.78 | 0.77 | 167 | 6.5min |
-| [Progressive VQ-VAE](RESEARCH_LOG.md#experiment-9-progressive-training-breakthrough) | 0.71 | 0.71 | 0.72 | 218 | 174s |
-| [LADR-VQ v2](RESEARCH_LOG.md#experiment-18-ladr-vq-v2-teacher-student-distillation--lag-tuning) | 0.695 | 0.70 | 0.69 | 385 | 4.6min |
-| [FSQ-VAE](RESEARCH_LOG.md#experiment-14-the-fsq-pivot-) | 0.64 | - | - | ~5 | 150ep |
-| [Manifold FSQ](RESEARCH_LOG.md#experiment-15-manifold-fsq-vae-triple-loss) | 0.60 | - | - | - | 150ep |
-| [Frankenstein](RESEARCH_LOG.md#experiment-16-the-frankenstein-pivot) | ~0.72 | - | - | - | ⏳ |
-| **Raw LSTM (baseline)** | 0.797 | - | - | - | - |
+| Model | R² | Gap to LSTM | Params | Notes |
+|-------|-----|-------------|--------|-------|
+| 🥇 **[Wide Transformer (384, 6L)](RESEARCH_LOG.md#experiment-21b-simplified-super-teacher-no-mamba)** | **0.8064** | **+0.70%** ✅ | 7.3M | Continuous teacher |
+| 🥈 [Max Transformer (512, 10L)](RESEARCH_LOG.md#experiment-21b-simplified-super-teacher-no-mamba) | 0.8052 | +0.54% | 21.3M | Continuous |
+| **Raw LSTM (baseline)** | **0.8009** | — | — | — |
+| 🥉 [Distilled RVQ (Exp 19)](RESEARCH_LOG.md#experiment-19-distilled-rvq-combining-best-of-exp-12--exp-18) | 0.784 | -2.1% | — | Best discrete VQ |
+| [RVQ-4 (Exp 12)](RESEARCH_LOG.md#experiment-12-residual-vector-quantization-rvq) | 0.776 | -3.1% | — | Discrete VQ |
+| [Deep CausalTransformer](RESEARCH_LOG.md#experiment-11-beat-the-lstm---architecture-upgrade) | 0.773 | -3.5% | — | Continuous |
 
-**Pre-training encoder alone: R² = 0.784 (exceeds LSTM!)** — see [Exp 12 analysis](RESEARCH_LOG.md#experiment-12-residual-vector-quantization-rvq)
+**🎯 Next: Distill Wide Transformer to RVQ → discrete model that beats LSTM!**
 
 ## Key Findings
 
@@ -42,6 +38,9 @@ Personal research sandbox for exploring neural decoding approaches for BCI appli
 11. **β=0.5 is optimal for distillation**: Exp 20 sweep showed higher β degrades performance (U-shaped curve)
 12. **🔴 Long context (2s) HURTS on MC_Maze**: Exp 21 showed slow pathway degrades R² by 2.8% — no exploitable preparatory dynamics
 13. **250ms is optimal window**: Longer windows add noise, not signal for this dataset
+14. **🎉 Width > Depth for Transformers**: Exp 21b showed 384×6L (0.806) beats 256×8L (0.793) and 512×10L (0.805)
+15. **Too deep hurts**: 384×8L was WORST (0.752) — overfitting from excessive depth
+16. **Data augmentation doesn't help**: Adding noise/masking degraded performance on MC_Maze
 
 ## What This Is
 
