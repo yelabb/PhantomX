@@ -148,6 +148,16 @@ See [RESEARCH_LOG.md](RESEARCH_LOG.md) for full experiment details
 ## Dream
 <img width="450" alt="image" src="https://github.com/user-attachments/assets/af41ec36-29ea-4560-93bc-007247c36227" />
 
+## Acknowledgments
+
+This project was developed with assistance from AI coding assistants and workflows:
+- Claude Opus 4.5 (Anthropic)
+- Claude Sonnet 4.5 (Anthropic)
+- Gemini 3.0 Pro (Google)
+- GPT 5.2 (OpenAI)
+
+All code was tested, and validated by the author.
+
 ## Author
 
 📧 youssef@elabbassi.com
