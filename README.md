@@ -135,4 +135,19 @@ See [RESEARCH_LOG.md](RESEARCH_LOG.md) for full experiment details
 ## Dream
 <img width="450" alt="image" src="https://github.com/user-attachments/assets/af41ec36-29ea-4560-93bc-007247c36227" />
 
+## Author
+
+📧 youssef@elabbassi.com
+
+If you use this work in your research, please cite:
+
+```bibtex
+@software{phantomx,
+  author = {Youssef El Abbassi}
+  title = {PhantomX: Neural Decoding as a Codec},
+  year = {2026},
+  url = {https://github.com/yelabb/PhantomX}
+}
+```
+
 
