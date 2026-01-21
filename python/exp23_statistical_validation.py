@@ -712,14 +712,14 @@ def main():
         },
         "verdict": {
             "winner": fair_winner,
-            "significant": fair_significant,
+            "significant": bool(fair_significant),
             "p_value": float(p_value_paired),
         }
     }
     
     results_path = RESULTS_DIR / "exp23_statistical_validation.json"
     with open(results_path, "w") as f:
-        json.dump(results, f, indent=2)
+        json.dump(results, f, indent=2, default=str)
     print(f"\nResults saved to {results_path}")
 
 

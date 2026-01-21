@@ -1913,32 +1913,86 @@ Exp 21b claimed Wide Transformer (384, 6L) = 0.8064 beats LSTM (0.8009). But:
 | 123 | 0.8010 | 80s |
 | 456 | 0.7868 | 89s |
 | 789 | 0.7877 | 42s |
-| 1337 | ⏳ Running | — |
+| 1337 | 0.7915 | 69s |
 
-**Summary** (4/5 runs):
-- **Mean R²**: ~0.794 ± 0.008
+**Summary**:
+- **Mean R²**: 0.7936 ± 0.0069
+- **95% CI**: [0.7850, 0.8022]
 - **Range**: [0.7868, 0.8010]
-- **Avg Time**: 72s
+- **Avg Time**: 71s
 
-### Analysis: 🔴 ORIGINAL CLAIM REFUTED
+### Statistical Analysis
+
+#### Test 1: Transformer vs LSTM (both WITH augmentation) — FAIR COMPARISON
+
+| Metric | Value |
+|--------|-------|
+| Paired t-test | t = -0.849, **p = 0.4438** |
+| Wilcoxon test | p = 0.6250 |
+| Cohen's d | -0.445 (small) |
+| Mean difference | -0.0109 |
+| **Verdict** | ⚠️ **NOT SIGNIFICANT** |
+
+#### Test 2: Transformer (aug) vs LSTM (no aug) — ORIGINAL CLAIM
+
+| Metric | Value |
+|--------|-------|
+| Independent t-test | t = -0.192, **p = 0.8529** |
+| Cohen's d | -0.121 (negligible) |
+| Mean difference | -0.0030 |
+| **Verdict** | ⚠️ **NOT SIGNIFICANT** |
+
+#### Augmentation Effect on LSTM
+
+| Metric | Value |
+|--------|-------|
+| t-test | p = 0.1085 |
+| Cohen's d | 1.142 (large effect, but not significant) |
+| Mean improvement | +0.8% (0.7936 → 0.8015) |
+
+### Analysis: ⚠️ STATISTICALLY INCONCLUSIVE, PRACTICALLY LSTM WINS
+
+#### Publication-Ready Summary
+
+```
+┌───────────────────────────────────────────────────────────────────────┐
+│                    Neural Decoding Performance                      │
+├──────────────────────────┬──────────────────┬───────────────────────┤
+│ Model                    │ R² (mean ± std)  │ 95% CI                │
+├──────────────────────────┼──────────────────┼───────────────────────┤
+│ LSTM (aug)               │ 0.8015 ± 0.0069 │ [0.7929, 0.8101]     │
+│ LSTM (no aug)            │ 0.7936 ± 0.0069 │ [0.7850, 0.8022]     │
+│ Wide Transformer (aug)   │ 0.7906 ± 0.0339 │ [0.7485, 0.8327]     │
+└──────────────────────────┴──────────────────┴───────────────────────┘
+```
 
 #### Head-to-Head Comparison
 
 | Metric | LSTM (aug) | Transformer (aug) | Winner |
 |--------|------------|-------------------|--------|
-| **Mean R²** | **0.8015** | 0.7906 | **LSTM (+1.4%)** |
+| **Mean R²** | **0.8015** | 0.7906 | LSTM (+1.4%) |
 | **Std Dev** | **0.0069** | 0.0339 | **LSTM (5x more stable)** |
 | **Best Run** | 0.8106 | 0.8346 | Transformer |
 | **Worst Run** | 0.7937 | 0.7405 | **LSTM (much better floor)** |
 | **Avg Train Time** | **66s** | 224s | **LSTM (3.4x faster)** |
+| **Statistical Diff** | — | — | ⚠️ None (p=0.44) |
 
 #### Key Findings
 
-1. **LSTM beats Transformer**: 0.8015 > 0.7906 (p-value pending)
-2. **LSTM is 5x more stable**: σ=0.007 vs σ=0.034
+1. **No statistically significant difference**: p = 0.44 (Transformer vs LSTM with aug)
+2. **LSTM is 5x more stable**: σ=0.007 vs σ=0.034 — this IS practically significant
 3. **LSTM is 3.4x faster**: 66s vs 224s per run
-4. **Transformer has high variance**: 0.74 to 0.83 across seeds
+4. **Transformer has high variance**: 0.74 to 0.83 across seeds (unreliable)
 5. **Original R²=0.8064 claim was a lucky seed** (true mean ≈ 0.79)
+6. **Augmentation helps LSTM**: +0.8% but not statistically significant (p=0.11)
+
+#### Verdict
+
+> **Statistical Verdict**: ⚠️ **INCONCLUSIVE** — Cannot claim Transformer beats LSTM (or vice versa)
+>
+> **Practical Verdict**: 🏆 **LSTM WINS** — Same performance, but 5x more stable, 3.4x faster
+>
+> **For production BCI**: Choose LSTM. It's simpler, faster, and more predictable.
 
 #### Why Transformer Failed
 

@@ -10,29 +10,29 @@ PhantomX — Neural Decoding as a Codec: Quantized Latent Representations for Ro
 
 ## 🎯 Results
 
-🔬 **[Exp 23: Statistical Validation COMPLETE](RESEARCH_LOG.md#experiment-23-statistical-validation)** — LSTM wins!
+🔬 **[Exp 23: Statistical Validation COMPLETE](RESEARCH_LOG.md#experiment-23-statistical-validation)**
 
 ### Validated Results (5 seeds each)
 
 | Model | R² (mean ± std) | 95% CI | Verdict |
 |-------|-----------------|--------|--------|
-| 🥇 **LSTM (aug)** | **0.8015 ± 0.007** | [0.793, 0.810] | ✅ **WINNER** |
-| 🥈 LSTM (no aug) | 0.794* ± 0.008 | ⏳ 4/5 runs | Solid baseline |
-| 🥉 Wide Transformer (aug) | 0.7906 ± 0.034 | [0.749, 0.833] | ❌ High variance |
+| 🥇 **LSTM (aug)** | **0.8015 ± 0.007** | [0.793, 0.810] | ✅ Practical winner |
+| 🥈 LSTM (no aug) | 0.7936 ± 0.007 | [0.785, 0.802] | Solid baseline |
+| 🥉 Wide Transformer (aug) | 0.7906 ± 0.034 | [0.749, 0.833] | ⚠️ High variance |
 
-**🔴 Key Finding**: Original claim REFUTED. LSTM beats Transformer when properly validated:
-- LSTM is **1.4% better** (0.8015 vs 0.7906)
-- LSTM is **5x more stable** (σ=0.007 vs σ=0.034)
-- LSTM is **3.4x faster** to train
+**Statistical Verdict**: ⚠️ **INCONCLUSIVE** (p = 0.44) — No significant difference between models!
 
-### Leaderboard (Validated)
+**Practical Verdict**: 🏆 **LSTM wins** — 5x more stable, 3.4x faster, equivalent performance
+
+### Leaderboard
 
 | Rank | Model | R² | Notes |
 |------|-------|-----|-------|
-| 🥇 | **LSTM + Augmentation** | **0.8015 ± 0.007** | Stable, fast |
-| 🥈 | Wide Transformer (384, 6L) | 0.7906 ± 0.034 | High variance |
-| 🥉 | [Distilled RVQ (Exp 19)](RESEARCH_LOG.md#experiment-19-distilled-rvq-combining-best-of-exp-12--exp-18) | 0.784 | Best discrete VQ |
-| 4 | [RVQ-4 (Exp 12)](RESEARCH_LOG.md#experiment-12-residual-vector-quantization-rvq) | 0.776 | Discrete VQ |
+| 🥇 | **LSTM + Augmentation** | **0.8015 ± 0.007** | Stable, fast, practical winner |
+| 🥈 | LSTM (no aug) | 0.7936 ± 0.007 | Still excellent |
+| 🥉 | Wide Transformer (384, 6L) | 0.7906 ± 0.034 | Statistically equivalent, but unstable |
+| 4 | [Distilled RVQ (Exp 19)](RESEARCH_LOG.md#experiment-19-distilled-rvq-combining-best-of-exp-12--exp-18) | 0.784 | Best discrete VQ |
+| 5 | [RVQ-4 (Exp 12)](RESEARCH_LOG.md#experiment-12-residual-vector-quantization-rvq) | 0.776 | Discrete VQ |
 
 ## Key Findings
 
