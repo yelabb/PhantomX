@@ -17,11 +17,12 @@ PhantomX — Neural Decoding as a Codec: Quantized Latent Representations for Ro
 | 🥇 **[Wide Transformer (384, 6L)](RESEARCH_LOG.md#experiment-21b-simplified-super-teacher-no-mamba)** | **0.8064** | **+0.70%** ✅ | 7.3M | Continuous teacher |
 | 🥈 [Max Transformer (512, 10L)](RESEARCH_LOG.md#experiment-21b-simplified-super-teacher-no-mamba) | 0.8052 | +0.54% | 21.3M | Continuous |
 | **Raw LSTM (baseline)** | **0.8009** | — | — | — |
-| 🥉 [Distilled RVQ (Exp 19)](RESEARCH_LOG.md#experiment-19-distilled-rvq-combining-best-of-exp-12--exp-18) | 0.784 | -2.1% | — | Best discrete VQ |
-| [RVQ-4 (Exp 12)](RESEARCH_LOG.md#experiment-12-residual-vector-quantization-rvq) | 0.776 | -3.1% | — | Discrete VQ |
-| [Deep CausalTransformer](RESEARCH_LOG.md#experiment-11-beat-the-lstm---architecture-upgrade) | 0.773 | -3.5% | — | Continuous |
+| 🥉 [Distilled RVQ (Exp 19)](RESEARCH_LOG.md#experiment-19-distilled-rvq-combining-best-of-exp-12--exp-18) | 0.784 | -2.6% | — | Best discrete VQ |
+| [RVQ-4 (Exp 12)](RESEARCH_LOG.md#experiment-12-residual-vector-quantization-rvq) | 0.776 | -3.5% | — | Discrete VQ |
+| [Exp 22 Distilled RVQ](RESEARCH_LOG.md#experiment-22-distill-wide-transformer-to-rvq) | 0.741 | -7.9% | — | ❌ Missing augmentation |
+| [Deep CausalTransformer](RESEARCH_LOG.md#experiment-11-beat-the-lstm---architecture-upgrade) | 0.773 | -4.0% | — | Continuous |
 
-**🎯 Next: Distill Wide Transformer to RVQ → discrete model that beats LSTM!**
+**🎯 Next: Exp 22b — Distill WITH augmentation (Exp 22 failed: teacher 0.750 vs 0.806 due to missing augmentation)**
 
 ## Key Findings
 
@@ -40,7 +41,10 @@ PhantomX — Neural Decoding as a Codec: Quantized Latent Representations for Ro
 13. **250ms is optimal window**: Longer windows add noise, not signal for this dataset
 14. **🎉 Width > Depth for Transformers**: Exp 21b showed 384×6L (0.806) beats 256×8L (0.793) and 512×10L (0.805)
 15. **Too deep hurts**: 384×8L was WORST (0.752) — overfitting from excessive depth
-16. **Data augmentation doesn't help**: Adding noise/masking degraded performance on MC_Maze
+16. **Data augmentation is CRITICAL during training**: Exp 21b used augment=True in sweep → 0.806. Exp 22 forgot augmentation → only 0.750
+17. **Reproducibility requires matching ALL training conditions**: Architecture alone is insufficient — same augmentation, dropout, lr needed
+18. **🔴 Exp 22 FAILED**: Teacher regressed 7% (0.806→0.750) without augmentation → Student only reached 0.741
+19. **Excellent codebook utilization**: Exp 22 achieved 94.5% average usage (484/512 codes) — no collapse issue
 
 ## What This Is
 

@@ -1746,13 +1746,106 @@ Width allows richer per-timestep representations without overfitting temporal st
 
 ---
 
-## Next Steps: Exp 22 — Distill Wide Transformer to RVQ
+## Experiment 22: Distill Wide Transformer to RVQ
+**Date**: 2026-01-21
+**Goal**: First discrete VQ model to beat LSTM!
 
-**Goal**: Create a discrete VQ model that beats LSTM
+### Strategy
+
+Distill Wide Transformer (R² = 0.806) → RVQ-4 Student using Exp 19 methodology.
+
+### Results
+
+```
+BASELINE: LSTM: R² = 0.8045
+
+PHASE 1: TRAINING WIDE TRANSFORMER TEACHER
+  Early stopping at epoch 101
+  Teacher R² = 0.7500  ← Much lower than Exp 21b!
+
+PHASE 2: K-MEANS INITIALIZATION OF RVQ CODEBOOKS
+  ✓ RVQ codebooks initialized (4 layers × 128 codes)
+
+PHASE 3: DISTILLATION TRAINING
+  α (velocity weight): 1.0
+  β (distillation weight): 0.5
+  Early stopping at epoch 34
+  Student R² = 0.7412
+
+CODEBOOK UTILIZATION:
+  Layer 1: 121/128 codes (94.5%)
+  Layer 2: 115/128 codes (89.8%)
+  Layer 3: 123/128 codes (96.1%)
+  Layer 4: 125/128 codes (97.7%)
+  Total: 484/512 codes used
+```
+
+### Analysis: ❌ FAILED — Teacher Regressed!
+
+**Key Discoveries**:
+
+1. **Teacher R² collapsed**: 0.750 vs 0.806 in Exp 21b — a 7% drop!
+2. **Root cause: Missing augmentation**: Exp 21b used `augment=True` in sweep, Exp 22 forgot it
+3. **Discretization tax**: 1.17% (Teacher 0.750 → Student 0.741)
+4. **Excellent codebook usage**: 94.5% average utilization (no collapse)
+
+**Why Teacher Regressed?**
+
+Exp 21b achieved R² = 0.806 with data augmentation enabled during training:
+- Noise injection: σ=0.1 additive Gaussian
+- Time masking: Random 10% of timesteps masked
+
+Exp 22 trained the "same" architecture but WITHOUT augmentation → 0.750
+
+This proves **data augmentation is CRITICAL** for Transformer generalization on this dataset.
+
+### Key Insight
+
+> **Reproducibility requires matching ALL training conditions!**
+>
+> Architecture alone is insufficient. Augmentation, dropout, learning rate, etc. must all match.
+>
+> Exp 22b must re-train teacher WITH augmentation before distilling.
+
+### Comparison to Previous Experiments
+
+| Experiment | Teacher R² | Student R² | Discretization Tax |
+|------------|------------|------------|--------------------|
+| Exp 22 | 0.750 | 0.741 | 1.17% |
+| Exp 19 | 0.780 | 0.784 | -0.51% (student beat teacher!) |
+| Exp 18 | 0.708 | 0.708 | 0% |
+
+### Files Added
+
+- [exp22_distill_wide_transformer.py](python/exp22_distill_wide_transformer.py): Distillation training
+- [results/exp22_distill_wide_transformer.json](python/results/exp22_distill_wide_transformer.json): Results
+- [models/exp22_distilled_rvq.pt](python/models/exp22_distilled_rvq.pt): Model checkpoint
+
+**Status**: ❌ Student did not beat LSTM (0.741 vs 0.805)
+
+---
+
+## Summary: Current Best
+
+| Rank | Model | R² | Gap to LSTM |
+|------|-------|-----|-------------|
+| 🥇 | **Wide Transformer (Exp 21b)** | **0.8064** | **+0.70%** ✅ |
+| 🥈 | Max Transformer (Exp 21b) | 0.8052 | +0.54% |
+| — | **LSTM Baseline** | **0.8045** | — |
+| 🥉 | Distilled RVQ (Exp 19) | 0.784 | -2.6% |
+| 4 | RVQ-4 (Exp 12) | 0.776 | -3.5% |
+| 5 | Exp 22 Distilled RVQ | 0.741 | -7.9% |
+
+---
+
+## Next Steps: Exp 22b — Distill with Augmentation
+
+**Goal**: Fix Exp 22 by training teacher WITH augmentation
 
 **Strategy**:
-1. Use Wide Transformer (384, 6L) as teacher (R² = 0.8064)
-2. Distill to RVQ-4 student using Exp 19 methodology
-3. Target: Student R² > 0.80 (would be first discrete model to beat LSTM)
+1. Re-train Wide Transformer (384, 6L) with `augment=True` to match Exp 21b
+2. Verify teacher reaches R² ≈ 0.806
+3. Distill to RVQ-4 student
+4. Target: Student R² > 0.80 (first discrete model to beat LSTM)
 
-**Hypothesis**: With a stronger teacher (0.806 vs 0.780), the distilled student should exceed the previous best (0.784) and potentially beat LSTM (0.800).
+**Hypothesis**: With proper augmentation, teacher should reach 0.806 and student should exceed 0.784 (Exp 19), potentially beating LSTM.
