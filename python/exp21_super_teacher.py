@@ -70,7 +70,7 @@ from torch.utils.data import DataLoader, Dataset, Subset
 # Local imports
 import sys
 sys.path.insert(0, str(Path(__file__).parent))
-from phantomx.data import MCMazeDataset
+from phantomx.data.mc_maze_loader import load_mc_maze_from_nwb
 
 DATA_PATH = Path(__file__).parent.parent / "data" / "mc_maze.nwb"
 RESULTS_DIR = Path(__file__).parent / "results"
@@ -969,11 +969,10 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}")
     
-    # Load data
+    # Load data directly from NWB
     print("\nLoading MC_Maze data...")
-    mc_dataset = MCMazeDataset(DATA_PATH)
-    spike_counts = mc_dataset.spike_counts  # [T, 142]
-    velocities = mc_dataset.velocities      # [T, 2]
+    spike_counts, kinematics = load_mc_maze_from_nwb(str(DATA_PATH))
+    velocities = kinematics[:, 2:4]  # [T, 2] - vx, vy
     
     # Normalize
     spike_counts = (spike_counts - spike_counts.mean(0)) / (spike_counts.std(0) + 1e-6)
