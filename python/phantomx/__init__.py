@@ -12,7 +12,11 @@ from .vqvae import VQVAE, VQVAETrainer, Codebook
 from .tta import EntropyMinimizer, TTAOptimizer
 from .inference import LabramDecoder
 
+# Dataset system
+from .datasets import get_dataset, list_datasets
+
 __all__ = [
+    # Core components
     "SpikeTokenizer",
     "TokenVocabulary",
     "VQVAE",
@@ -21,4 +25,7 @@ __all__ = [
     "EntropyMinimizer",
     "TTAOptimizer",
     "LabramDecoder",
+    # Datasets
+    "get_dataset",
+    "list_datasets",
 ]

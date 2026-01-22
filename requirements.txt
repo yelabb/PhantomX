@@ -10,6 +10,10 @@ scipy>=1.11.0
 pynwb>=2.5.0
 h5py>=3.9.0
 
+# Dataset Download & Caching
+requests>=2.31.0
+tqdm>=4.65.0
+
 # Training & Optimization
 einops>=0.7.0
 timm>=0.9.0  # For modern architectures if needed
