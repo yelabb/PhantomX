@@ -11,9 +11,21 @@ PhantomX — Neural Decoding as a Codec: Quantized Latent Representations for Ro
 
 ## 🎯 Results
 
-🔬 **[Exp 24: Statistical Validation](RESEARCH_LOG.md#experiment-24-statistical-validation-of-exp-22c)** — LSTM wins, RVQ not validated
+🔬 **[Exp 25: Mamba on MC_RTT](RESEARCH_LOG.md#experiment-25-mamba-on-mc_rtt-the-navigation-filter)** — Mamba succeeds on continuous tracking!
 
-### Latest: Exp 24 Statistical Validation (5 seeds)
+### Latest: Exp 25 Mamba on MC_RTT (New Dataset)
+
+| Model | Dataset | R² | Notes |
+|-------|---------|-----|-------|
+| **Mamba-4L (2s window)** | **MC_RTT** | **0.7474** | 🎯 Target exceeded! |
+| LSTM (aug) | MC_Maze | 0.8000 | Validated baseline |
+| Mamba-4L | MC_Maze | 0.68 | ❌ Failed (Exp 13) |
+
+**Key Insight**: Same architecture succeeds/fails based on task structure:
+- MC_Maze (discrete trials): Context = noise → LSTM wins
+- MC_RTT (continuous tracking): Context = trajectory → Mamba shines
+
+### Exp 24 Statistical Validation (5 seeds)
 
 | Model | R² (mean ± std) | 95% CI | p-value |
 |-------|-----------------|--------|--------|
@@ -75,6 +87,8 @@ PhantomX — Neural Decoding as a Codec: Quantized Latent Representations for Ro
 26. **Cherry-picking inflates results**: Exp 22c's single-split R²=0.8107 was not reproducible; true mean = 0.7762 ± 0.021
 27. **Discretization tax is negligible but real**: 0.71% ± 1.01% across 5 seeds (not statistically significant, p=0.19)
 28. **LSTM's inductive bias wins on MC_Maze**: Simple sequential dynamics favor LSTM's smoothing bias over Transformer's flexibility
+29. **🎉 Mamba succeeds on MC_RTT**: R² = 0.7474 on continuous tracking task — same model that failed on MC_Maze (0.68) works when context = trajectory
+30. **Task structure determines architecture**: MC_Maze (discrete) → context is noise; MC_RTT (continuous) → context is signal
 
 ## What This Is
 
@@ -140,19 +154,19 @@ pip install -r requirements.txt
 
 ## Current Status
 
-✅ **Exp 22c Complete** — Multi-seed distillation achieves R² = 0.8107
+✅ **Exp 25 In Progress** — Mamba succeeds on MC_RTT (R² = 0.7474)
 
-### Latest: RVQ-4 Student (Exp 22c)
+### Latest: Mamba on MC_RTT (Exp 25)
 
-| Model | R² | Notes |
-|-------|-----|-------|
-| Super-Teacher (seed 42) | 0.8162 | Best of 3 seeds |
-| **RVQ-4 Student** | **0.8107** | Discrete tokens |
-| LSTM Baseline | 0.8045 | — |
+| Model | Dataset | R² | Notes |
+|-------|---------|-----|-------|
+| **Mamba-4L (2s)** | **MC_RTT** | **0.7474** | 🎯 Continuous tracking |
+| LSTM (aug) | MC_Maze | 0.8000 | Validated baseline |
+| Mamba-4L | MC_Maze | 0.68 | ❌ Context = noise |
 
-- **Discretization tax**: 0.55% (Teacher → Student)
-- **Codebook utilization**: 98.4% (504/512 codes)
-- *Single split; multi-seed validation pending*
+- **Hypothesis confirmed**: Mamba works when context = trajectory (not noise)
+- **New dataset**: MC_RTT — 130 units, 649s continuous, random target tracking
+- **Architecture**: Proper S6 with official Mamba initialization
 
 ### Validated Baselines (Exp 23, 5 seeds each)
 
