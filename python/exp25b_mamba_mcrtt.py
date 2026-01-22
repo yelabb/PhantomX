@@ -83,7 +83,25 @@ def load_mc_rtt_from_nwb(file_path: str, bin_size_ms: float = 25.0) -> Tuple[np.
         for i in range(n_bins):
             start_idx = i * bin_samples
             end_idx = start_idx + bin_samples
-            velocities[i] = finger_vel[start_idx:end_idx].mean(axis=0)
+            velocities[i] = np.nanmean(finger_vel[start_idx:end_idx], axis=0)  # Use nanmean to handle NaN
+        
+        # Check for NaN in velocities and interpolate
+        nan_mask = np.isnan(velocities).any(axis=1)
+        n_nan = nan_mask.sum()
+        if n_nan > 0:
+            print(f"  WARNING: {n_nan} bins have NaN velocities, interpolating...")
+            # Linear interpolation for NaN values
+            for dim in range(2):
+                vel_dim = velocities[:, dim]
+                nan_idx = np.isnan(vel_dim)
+                if nan_idx.any():
+                    valid_idx = ~nan_idx
+                    x_valid = np.where(valid_idx)[0]
+                    x_nan = np.where(nan_idx)[0]
+                    velocities[x_nan, dim] = np.interp(x_nan, x_valid, vel_dim[valid_idx])
+        
+        # Verify no NaN remaining
+        assert not np.isnan(velocities).any(), "NaN still present after interpolation!"
         
         print(f"  Loaded: spike_counts {spike_counts.shape}, velocities {velocities.shape}")
         
