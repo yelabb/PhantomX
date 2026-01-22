@@ -2174,3 +2174,165 @@ Final Student R² = 0.8107
 
 **Note**: Exp 22c results are from a single split. Exp 23 showed high variance across seeds for Transformers — the 0.8162 teacher may be an optimistic estimate. Statistical validation pending.
 
+---
+
+## Experiment 24: Statistical Validation of Exp 22c
+**Date**: 2026-01-22
+**Goal**: Validate Exp 22c claims with proper statistical rigor (n=5 seeds)
+
+### Motivation
+
+Exp 22c claimed RVQ-4 Student (R² = 0.8107) beats LSTM (0.8045). But:
+- This was a **single split** with cherry-picked best teacher seed
+- Need **multiple seeds** for full pipeline (Teacher → RVQ init → Distill)
+- Need **paired statistical tests** with effect size
+
+### Protocol
+
+1. Run FULL exp22c pipeline 5x with different seeds (42, 123, 456, 789, 1337)
+2. Each run: Train teacher → K-means init RVQ → Distill student
+3. Run LSTM baseline 5x with same seeds and augmentation
+4. Statistical tests: Paired t-test, Wilcoxon, Cohen's d
+
+### Results
+
+#### Phase 1: Full Exp22c Pipeline (Teacher → RVQ → Student)
+
+| Seed | Teacher R² | Student R² | Disc. Tax | Time |
+|------|------------|------------|-----------|------|
+| 42 | 0.8162 | 0.7950 | 2.12% | 492s |
+| 123 | 0.7715 | 0.7594 | 1.21% | 477s |
+| 456 | 0.7852 | 0.7809 | 0.43% | 292s |
+| 789 | 0.7538 | 0.7499 | 0.40% | 273s |
+| 1337 | 0.7898 | 0.7957 | -0.59% | 243s |
+
+#### Phase 2: LSTM Baseline (WITH Augmentation)
+
+| Seed | R² | Time |
+|------|-----|------|
+| 42 | 0.8062 | 48s |
+| 123 | 0.7899 | 67s |
+| 456 | 0.8057 | 68s |
+| 789 | 0.7908 | 68s |
+| 1337 | 0.8072 | 66s |
+
+### Statistical Analysis
+
+#### Summary Statistics
+
+```
+┌────────────────────────┬──────────────────┬────────────────────────────┐
+│ Model                  │ R² (mean ± std)  │ 95% CI                     │
+├────────────────────────┼──────────────────┼────────────────────────────┤
+│ Teacher (Transformer)  │ 0.7833 ± 0.0231 │ [0.7546, 0.8120]           │
+│ Student (RVQ-4)        │ 0.7762 ± 0.0208 │ [0.7504, 0.8020]           │
+│ LSTM (augmented)       │ 0.8000 ± 0.0088 │ [0.7890, 0.8109]           │
+└────────────────────────┴──────────────────┴────────────────────────────┘
+
+Discretization Tax: 0.71% ± 1.01%
+```
+
+#### Test 1: Student vs LSTM (Paired t-test)
+
+| Metric | Value |
+|--------|-------|
+| Paired t-test | t = -4.177, **p = 0.0139** |
+| Wilcoxon test | p = 0.0625 |
+| Cohen's d | -1.490 (large effect) |
+| Mean difference | -0.0238 |
+| **Verdict** | ❌ **LSTM > Student (p < 0.05)** |
+
+#### Test 2: Teacher vs LSTM (Paired t-test)
+
+| Metric | Value |
+|--------|-------|
+| Paired t-test | t = -2.206, **p = 0.0920** |
+| Cohen's d | -0.953 (large effect) |
+| Mean difference | -0.0167 |
+| **Verdict** | ⚠️ NOT SIGNIFICANT (p ≥ 0.05) |
+
+#### Test 3: Discretization Tax Consistency
+
+| Metric | Value |
+|--------|-------|
+| Tax range | [-0.59%, 2.12%] |
+| Tax mean ± std | 0.71% ± 1.01% |
+| Paired t-test | t = 1.571, p = 0.1913 |
+| **Verdict** | Discretization tax is NOT significant |
+
+### Analysis: ❌ EXP 22c NOT VALIDATED
+
+#### Key Findings
+
+1. **LSTM significantly beats RVQ Student**: p = 0.0139, Cohen's d = -1.49 (large effect)
+2. **Exp 22c's R² = 0.8107 was not reproducible**: True mean = 0.7762 ± 0.021
+3. **Cherry-picking inflated results by 4.4%**: 0.8107 (cherry-picked) vs 0.7762 (mean)
+4. **Discretization tax is small but real**: 0.71% average, ranging from -0.59% to 2.12%
+5. **LSTM is more stable**: std = 0.009 vs Student's 0.021 (2.4x less variance)
+
+#### Why Exp 22c Failed Validation
+
+| Factor | Exp 22c | Exp 24 |
+|--------|---------|--------|
+| Seeds tested | 3 (teacher) → 1 (student) | 5 (full pipeline) |
+| Selection | Cherry-picked best teacher | No selection bias |
+| Statistical test | None | Paired t-test, Wilcoxon |
+| Result | R² = 0.8107 | R² = 0.7762 ± 0.021 |
+
+### Verdict
+
+> **❌ NOT VALIDATED: RVQ Student does NOT beat LSTM**
+>
+> - Student R² = 0.7762 ± 0.021
+> - LSTM R² = 0.8000 ± 0.009  
+> - p = 0.0139 (significant)
+> - Cohen's d = -1.49 (large effect favoring LSTM)
+
+> **Positive finding: Discretization tax is negligible (0.71%)**
+>
+> The RVQ quantization itself works well — the bottleneck is the Teacher.
+
+### Updated Leaderboard (Validated)
+
+| Rank | Model | R² (mean ± std) | 95% CI | Notes |
+|------|-------|-----------------|--------|-------|
+| 🥇 | **LSTM (aug)** | **0.8000 ± 0.009** | [0.789, 0.811] | ✅ Validated winner |
+| 🥈 | Teacher (Transformer) | 0.7833 ± 0.023 | [0.755, 0.812] | High variance |
+| 🥉 | Student (RVQ-4) | 0.7762 ± 0.021 | [0.750, 0.802] | Disc. tax: 0.71% |
+
+### Files
+
+- [exp24_validate_22c.py](python/exp24_validate_22c.py): Full validation script
+- [results/exp24_validate_22c.json](python/results/exp24_validate_22c.json): Results
+
+---
+
+## Final Summary: LSTM Wins
+
+After 24 experiments, the conclusion is clear:
+
+> **🏆 LSTM is the best model for MC_Maze velocity decoding.**
+>
+> - R² = 0.8000 ± 0.009 (validated, n=5)
+> - 2.4x more stable than Transformer
+> - 3x+ faster to train
+> - Simple, interpretable, production-ready
+
+### The VQ Journey
+
+| Experiment | Best VQ R² | Gap to LSTM |
+|------------|------------|-------------|
+| Exp 9 | 0.704 | -9.6% |
+| Exp 12 (RVQ-4) | 0.776 | -2.4% |
+| Exp 19 (Distilled) | 0.784 | -1.6% |
+| **Exp 22c (cherry-picked)** | **0.8107** | **+1.3%** |
+| **Exp 24 (validated)** | **0.7762** | **-2.4%** |
+
+### Key Lessons
+
+1. **Always validate with multiple seeds** — single-split results are unreliable
+2. **Cherry-picking inflates results** — Exp 22c's "best teacher" strategy overstated performance by 4.4%
+3. **Inductive bias matters** — LSTM's sequential smoothing matches MC_Maze's simple dynamics
+4. **Discretization works** — RVQ preserves 99.3% of teacher performance, but the teacher is the bottleneck
+5. **Complexity ≠ performance** — Simpler models (LSTM) beat complex ones (Transformer+RVQ) on simple tasks
+

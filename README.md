@@ -11,17 +11,17 @@ PhantomX — Neural Decoding as a Codec: Quantized Latent Representations for Ro
 
 ## 🎯 Results
 
-🔬 **[Exp 22c: Multi-Seed Distillation](RESEARCH_LOG.md#experiment-22c-multi-seed-super-teacher-distillation)** — RVQ Student reaches R² = 0.8107
+🔬 **[Exp 24: Statistical Validation](RESEARCH_LOG.md#experiment-24-statistical-validation-of-exp-22c)** — LSTM wins, RVQ not validated
 
-### Latest: Exp 22c Multi-Seed Distillation
+### Latest: Exp 24 Statistical Validation (5 seeds)
 
-| Model | R² | Notes |
-|-------|-----|-------|
-| Super-Teacher (seed 42) | 0.8162 | Best of 3 seeds |
-| **RVQ-4 Student** | **0.8107** | Discrete tokens |
-| LSTM Baseline | 0.8045 | — |
+| Model | R² (mean ± std) | 95% CI | p-value |
+|-------|-----------------|--------|--------|
+| **LSTM (aug)** | **0.8000 ± 0.0088** | [0.789, 0.811] | — |
+| Teacher (Transformer) | 0.7833 ± 0.0231 | [0.755, 0.812] | 0.092 |
+| Student (RVQ-4) | 0.7762 ± 0.0208 | [0.750, 0.802] | 0.014 |
 
-*Pending multi-seed validation to confirm statistical significance (cf. Exp 23)*
+**Verdict**: ❌ RVQ Student does NOT beat LSTM (p = 0.014, LSTM wins)
 
 ### Validated Results (5 seeds each, Exp 23)
 
@@ -35,17 +35,15 @@ PhantomX — Neural Decoding as a Codec: Quantized Latent Representations for Ro
 
 **Practical Verdict**: 🏆 **LSTM wins** — 5x more stable, 3.4x faster, equivalent performance
 
-### Leaderboard
+### Leaderboard (Validated, 5 seeds)
 
-| Rank | Model | R² | Notes |
-|------|-------|-----|-------|
-| 🥇 | **RVQ-4 Student (Exp 22c)** | **0.8107** | Discrete tokens, single split* |
-| 🥈 | LSTM + Augmentation | 0.8015 ± 0.007 | Validated, stable |
-| 🥉 | LSTM (no aug) | 0.7936 ± 0.007 | Validated |
-| 4 | Wide Transformer (aug) | 0.7906 ± 0.034 | Validated, high variance |
-| 5 | [Distilled RVQ (Exp 19)](RESEARCH_LOG.md#experiment-19-distilled-rvq-combining-best-of-exp-12--exp-18) | 0.784 | Previous best discrete |
+| Rank | Model | R² (mean ± std) | Notes |
+|------|-------|-----------------|-------|
+| 🥇 | **LSTM (aug)** | **0.8000 ± 0.009** | Stable, validated ✅ |
+| 🥈 | Teacher (Transformer) | 0.7833 ± 0.023 | High variance |
+| 🥉 | Student (RVQ-4) | 0.7762 ± 0.021 | Discretization tax: 0.71% |
 
-*Single split result; multi-seed validation pending
+*All validated with 5 seeds, paired t-test, and Cohen's d effect size*
 
 ## Key Findings
 
@@ -73,6 +71,10 @@ PhantomX — Neural Decoding as a Codec: Quantized Latent Representations for Ro
 22. **Multi-seed teacher selection improves distillation**: Exp 22c best seed (0.8162) vs mean (0.7910) shows ±2.5% seed variance
 23. **Distillation preserves 99%+ of teacher performance**: Exp 22c student (0.8107) retained 99.3% of teacher (0.8162) with only 0.55% discretization tax
 24. **Near-perfect codebook utilization achieved**: Exp 22c reached 98.4% usage (504/512 codes) with k-means init
+25. **🔴 Exp 24 REFUTED Exp 22c**: Multi-seed validation (n=5) showed LSTM (0.8000) significantly beats RVQ Student (0.7762) with p=0.014
+26. **Cherry-picking inflates results**: Exp 22c's single-split R²=0.8107 was not reproducible; true mean = 0.7762 ± 0.021
+27. **Discretization tax is negligible but real**: 0.71% ± 1.01% across 5 seeds (not statistically significant, p=0.19)
+28. **LSTM's inductive bias wins on MC_Maze**: Simple sequential dynamics favor LSTM's smoothing bias over Transformer's flexibility
 
 ## What This Is
 
