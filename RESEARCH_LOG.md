@@ -2403,13 +2403,15 @@ shuffle = True  # OK for stateless model
 split = 70% train / 15% val / 15% test (sequential)
 ```
 
-### Results (In Progress)
+### Results
 
 | Epoch | Train Loss | Val R² | Status |
 |-------|------------|--------|--------|
-| 1 | 0.4521 | 0.6788 | 📈 |
-| 10 | 0.0224 | 0.7474 | 🎯 Target exceeded! |
-| ... | ... | ... | (training continues) |
+| 1 | 0.4481 | 0.7208 | 🎯 Target exceeded! |
+| 10 | 0.0228 | 0.7434 | 🎯 |
+| 20 | 0.0136 | 0.7425 | 🎯 Plateau |
+
+**Observation**: Model converges quickly (epoch 1 already at 0.72) and plateaus at R² ≈ 0.74 by epoch 10.
 
 ### Analysis
 
