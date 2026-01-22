@@ -23,7 +23,7 @@ APP_NAME = "phantomx-gpu"
 
 class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, directory=os.path.dirname(DATA_FILE), **kwargs)
+        super().__init__(*args, directory=str(DATA_FILE.parent), **kwargs)
     
     def log_message(self, format, *args):
         print(f"[HTTP] {format % args}")
@@ -51,12 +51,12 @@ def main():
     print("  PhantomX Data Upload via HTTP")
     print("=" * 70)
     
-    if not os.path.exists(DATA_FILE):
+    if not DATA_FILE.exists():
         print(f"❌ Error: Data file not found: {DATA_FILE}")
         return
     
-    file_size = os.path.getsize(DATA_FILE) / 1024 / 1024
-    file_name = os.path.basename(DATA_FILE)
+    file_size = DATA_FILE.stat().st_size / 1024 / 1024
+    file_name = DATA_FILE.name
     local_ip = get_local_ip()
     
     print(f"\n📦 File: {file_name} ({file_size:.2f} MB)")

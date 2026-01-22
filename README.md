@@ -11,9 +11,19 @@ PhantomX — Neural Decoding as a Codec: Quantized Latent Representations for Ro
 
 ## 🎯 Results
 
-🔬 **[Exp 23: Statistical Validation COMPLETE](RESEARCH_LOG.md#experiment-23-statistical-validation)**
+🔬 **[Exp 22c: Multi-Seed Distillation](RESEARCH_LOG.md#experiment-22c-multi-seed-super-teacher-distillation)** — RVQ Student reaches R² = 0.8107
 
-### Validated Results (5 seeds each)
+### Latest: Exp 22c Multi-Seed Distillation
+
+| Model | R² | Notes |
+|-------|-----|-------|
+| Super-Teacher (seed 42) | 0.8162 | Best of 3 seeds |
+| **RVQ-4 Student** | **0.8107** | Discrete tokens |
+| LSTM Baseline | 0.8045 | — |
+
+*Pending multi-seed validation to confirm statistical significance (cf. Exp 23)*
+
+### Validated Results (5 seeds each, Exp 23)
 
 | Model | R² (mean ± std) | 95% CI | Verdict |
 |-------|-----------------|--------|--------|
@@ -21,7 +31,7 @@ PhantomX — Neural Decoding as a Codec: Quantized Latent Representations for Ro
 | 🥈 LSTM (no aug) | 0.7936 ± 0.007 | [0.785, 0.802] | Solid baseline |
 | 🥉 Wide Transformer (aug) | 0.7906 ± 0.034 | [0.749, 0.833] | ⚠️ High variance |
 
-**Statistical Verdict**: ⚠️ **INCONCLUSIVE** (p = 0.44) — No significant difference between models!
+**Statistical Verdict**: ⚠️ **INCONCLUSIVE** (p = 0.44) — No significant difference between models
 
 **Practical Verdict**: 🏆 **LSTM wins** — 5x more stable, 3.4x faster, equivalent performance
 
@@ -29,11 +39,13 @@ PhantomX — Neural Decoding as a Codec: Quantized Latent Representations for Ro
 
 | Rank | Model | R² | Notes |
 |------|-------|-----|-------|
-| 🥇 | **LSTM + Augmentation** | **0.8015 ± 0.007** | Stable, fast, practical winner |
-| 🥈 | LSTM (no aug) | 0.7936 ± 0.007 | Still excellent |
-| 🥉 | Wide Transformer (384, 6L) | 0.7906 ± 0.034 | Statistically equivalent, but unstable |
-| 4 | [Distilled RVQ (Exp 19)](RESEARCH_LOG.md#experiment-19-distilled-rvq-combining-best-of-exp-12--exp-18) | 0.784 | Best discrete VQ |
-| 5 | [RVQ-4 (Exp 12)](RESEARCH_LOG.md#experiment-12-residual-vector-quantization-rvq) | 0.776 | Discrete VQ |
+| 🥇 | **RVQ-4 Student (Exp 22c)** | **0.8107** | Discrete tokens, single split* |
+| 🥈 | LSTM + Augmentation | 0.8015 ± 0.007 | Validated, stable |
+| 🥉 | LSTM (no aug) | 0.7936 ± 0.007 | Validated |
+| 4 | Wide Transformer (aug) | 0.7906 ± 0.034 | Validated, high variance |
+| 5 | [Distilled RVQ (Exp 19)](RESEARCH_LOG.md#experiment-19-distilled-rvq-combining-best-of-exp-12--exp-18) | 0.784 | Previous best discrete |
+
+*Single split result; multi-seed validation pending
 
 ## Key Findings
 
@@ -58,6 +70,9 @@ PhantomX — Neural Decoding as a Codec: Quantized Latent Representations for Ro
 19. **Excellent codebook utilization**: Exp 22 achieved 94.5% average usage (484/512 codes) — no collapse issue
 20. **🧠 Inductive bias matters more than capacity**: Exp 23 showed LSTM (0.8015) beats Transformer (0.7906) because LSTM's sequential smoothing bias matches MC_Maze's simple reaching dynamics. Extra capacity without matching bias = variance, not performance.
 21. **🔴 Exp 23 REFUTED Transformer claim**: Multi-seed validation showed Transformer is 1.4% worse, 5x less stable, and 3.4x slower than LSTM
+22. **Multi-seed teacher selection improves distillation**: Exp 22c best seed (0.8162) vs mean (0.7910) shows ±2.5% seed variance
+23. **Distillation preserves 99%+ of teacher performance**: Exp 22c student (0.8107) retained 99.3% of teacher (0.8162) with only 0.55% discretization tax
+24. **Near-perfect codebook utilization achieved**: Exp 22c reached 98.4% usage (504/512 codes) with k-means init
 
 ## What This Is
 
@@ -123,9 +138,21 @@ pip install -r requirements.txt
 
 ## Current Status
 
-✅ **Exp 23 Complete** — Statistical validation with 5 seeds per model
+✅ **Exp 22c Complete** — Multi-seed distillation achieves R² = 0.8107
 
-### Key Result: LSTM Wins (Practically)
+### Latest: RVQ-4 Student (Exp 22c)
+
+| Model | R² | Notes |
+|-------|-----|-------|
+| Super-Teacher (seed 42) | 0.8162 | Best of 3 seeds |
+| **RVQ-4 Student** | **0.8107** | Discrete tokens |
+| LSTM Baseline | 0.8045 | — |
+
+- **Discretization tax**: 0.55% (Teacher → Student)
+- **Codebook utilization**: 98.4% (504/512 codes)
+- *Single split; multi-seed validation pending*
+
+### Validated Baselines (Exp 23, 5 seeds each)
 
 | Model | R² (mean ± std) | Stability | Speed |
 |-------|-----------------|-----------|-------|
@@ -135,12 +162,6 @@ pip install -r requirements.txt
 
 - **Statistical verdict**: ⚠️ Inconclusive (p = 0.44)
 - **Practical verdict**: 🏆 LSTM — 5x more stable, 3.4x faster
-
-### Best Discrete Model: Distilled RVQ (Exp 19)
-
-- **R² = 0.784** — Best VQ-based model
-- Only 2.2% below LSTM baseline
-- Discrete codebook with excellent utilization
 
 See [RESEARCH_LOG.md](RESEARCH_LOG.md) for full experiment details
 
