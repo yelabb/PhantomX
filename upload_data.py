@@ -13,15 +13,17 @@ import threading
 import time
 import os
 import socket
+from pathlib import Path
 
 # Configuration
-DATA_FILE = r"c:\Users\guzzi\Desktop\Projects\DEV-ACTIF\NeuraLink\PhantomX\data\mc_maze.nwb"
+SCRIPT_DIR = Path(__file__).parent.resolve()
+DATA_FILE = SCRIPT_DIR / "data" / "mc_maze.nwb"
 PORT = 8765
 APP_NAME = "phantomx-gpu"
 
 class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, directory=os.path.dirname(DATA_FILE), **kwargs)
+        super().__init__(*args, directory=str(DATA_FILE.parent), **kwargs)
     
     def log_message(self, format, *args):
         print(f"[HTTP] {format % args}")
