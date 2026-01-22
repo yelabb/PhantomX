@@ -182,8 +182,10 @@ pip install -r requirements.txt
 See [RESEARCH_LOG.md](RESEARCH_LOG.md) for full experiment details
 
 
-## Dream
-<img width="450" alt="image" src="https://github.com/user-attachments/assets/af41ec36-29ea-4560-93bc-007247c36227" />
+
+
+
+
 
 ## Acknowledgments
 
@@ -209,6 +211,12 @@ If you use this work in your research, please cite:
   url = {https://github.com/yelabb/PhantomX}
 }
 ```
+
+
+
+
+https://github.com/user-attachments/assets/3efa947c-cd41-4606-8f38-a50026513ca1
+
 
 
 
