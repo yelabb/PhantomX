@@ -1,0 +1,30 @@
+# Causal Transformer Configuration
+# =================================
+# Transformer with causal attention for neural decoding
+# Based on Exp 22c multi-seed teacher results
+
+name: "transformer"
+
+# Model class for Hydra instantiation
+_target_: src.models.transformer.CausalTransformerDecoder
+
+# Architecture
+d_model: 384       # Model dimension (from Exp 22c)
+n_heads: 6         # Attention heads
+n_layers: 6        # Transformer blocks
+dim_feedforward: 1536  # 4x d_model
+dropout: 0.1
+
+# Positional encoding
+pos_encoding: "sinusoidal"  # sinusoidal, learned, rotary
+max_seq_len: 512
+
+# Attention
+attention_dropout: 0.1
+causal: true       # Causal masking
+
+# Output
+output_dim: 2      # Velocity (vx, vy)
+
+# Temporal settings
+window_size: 10    # 10 bins * 25ms = 250ms

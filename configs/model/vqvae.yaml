@@ -1,0 +1,37 @@
+# Progressive VQ-VAE Model Configuration
+# =======================================
+# Default VQ-VAE architecture from successful experiments
+
+name: "vqvae"
+
+# Model class for Hydra instantiation
+_target_: src.models.vqvae.ProgressiveVQVAE
+
+# Architecture
+encoder:
+  hidden_dims: [1024, 512]
+  activation: "gelu"
+  use_layer_norm: true
+  dropout: 0.1
+
+decoder:
+  hidden_dims: [512, 1024]
+  activation: "gelu"
+  use_layer_norm: true
+  dropout: 0.1
+
+# Vector Quantization
+quantizer:
+  type: "ema"  # ema, gumbel, fsq
+  num_codes: 256
+  embedding_dim: 128
+  decay: 0.99
+  commitment_cost: 0.1
+  epsilon: 1e-5
+
+# Input/Output
+embedding_dim: 128
+output_dim: 2  # Velocity (vx, vy)
+
+# Temporal settings
+window_size: 10  # 10 bins * 25ms = 250ms context

@@ -1,0 +1,51 @@
+# @package _global_
+# ==================================================
+# Experiment 25: Mamba on MC_RTT
+# ==================================================
+# The Navigation Filter - Mamba as a Neural Kalman Filter
+#
+# HYPOTHESIS:
+# MC_RTT is continuous random target tracking where context IS the trajectory.
+# Mamba's stateful hidden state acts as trajectory memory.
+#
+# Key differences from MC_Maze:
+# - Window: 2 seconds (80 bins) - long context matters
+# - No shuffle: sequential batches for stateful training
+# - Stateful: model maintains h_t across the session
+#
+# TARGET: R² > 0.70
+
+defaults:
+  - override /model: mamba
+  - override /dataset: mc_rtt
+  - override /trainer: default
+  - override /augmentation: none
+
+# Experiment metadata
+experiment_name: "exp25_mamba_mc_rtt"
+notes: |
+  Experiment 25: Mamba on Continuous Tracking (MC_RTT)
+  - Stateful Mamba acting as Neural Kalman Filter
+  - 2-second context window for trajectory integration
+  - Sequential training (no shuffle)
+
+# Model overrides (from successful exp25 results)
+model:
+  d_model: 128
+  n_layers: 4
+  d_state: 16
+  window_size: 80    # 2 seconds at 40Hz
+  stateful: true
+
+# Dataset overrides
+dataset:
+  shuffle: false     # CRITICAL for stateful training
+  batch_size: 32
+
+# Training overrides
+trainer:
+  max_epochs: 100
+  learning_rate: 1e-3
+  patience: 30       # Longer patience for stateful training
+
+seed: 42

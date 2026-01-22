@@ -1,0 +1,53 @@
+# @package _global_
+# ==================================================
+# Experiment 23: Statistical Validation
+# ==================================================
+# Multi-seed validation to ensure reproducibility
+# From README: "Validated across 10 seeds"
+#
+# Best R² = 0.7159 ± 0.008
+
+defaults:
+  - override /model: vqvae
+  - override /dataset: mc_maze
+  - override /trainer: progressive
+  - override /augmentation: standard
+
+experiment_name: "exp23_statistical_validation"
+notes: |
+  Experiment 23: Statistical Validation
+  - 10 seeds for reproducibility
+  - Progressive VQ-VAE training
+  - Standard augmentation
+
+# Model (Progressive VQ-VAE)
+model:
+  embedding_dim: 128
+  quantizer:
+    num_codes: 256
+    type: "ema"
+  window_size: 10
+
+# Dataset
+dataset:
+  batch_size: 64
+  shuffle: true
+
+# Training (Progressive)
+trainer:
+  pretrain:
+    epochs: 30
+    learning_rate: 1e-3
+  finetune:
+    epochs: 50
+    learning_rate: 3e-4
+
+# Statistical validation
+validation:
+  n_seeds: 10
+  seeds: [42, 123, 456, 789, 1337, 2024, 3141, 4242, 5555, 6789]
+  report_mean: true
+  report_std: true
+  confidence_interval: 0.95
+
+seed: 42  # Default seed, overridden in sweep

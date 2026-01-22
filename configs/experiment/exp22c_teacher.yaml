@@ -1,0 +1,51 @@
+# @package _global_
+# ==================================================
+# Experiment 22c: Multi-Seed Teacher Distillation
+# ==================================================
+# Ensemble of transformers for robust teaching signal
+#
+# From RESEARCH_LOG: Architecture alone is insufficient.
+# Need identical augmentation, dropout, lr settings.
+#
+# Best result: R² = 0.7159
+
+defaults:
+  - override /model: transformer
+  - override /dataset: mc_maze
+  - override /trainer: default
+  - override /augmentation: standard
+
+experiment_name: "exp22c_multiseed_teacher"
+notes: |
+  Experiment 22c: Multi-Seed Causal Transformer
+  - Ensemble training across multiple seeds
+  - Knowledge distillation target
+  - Standard augmentation for robustness
+
+# Model overrides (from exp22c)
+model:
+  d_model: 384
+  n_heads: 6
+  n_layers: 6
+  dropout: 0.1
+  window_size: 10
+
+# Dataset
+dataset:
+  batch_size: 64
+  shuffle: true
+
+# Training
+trainer:
+  max_epochs: 100
+  learning_rate: 3e-4
+  lr_scheduler: "cosine"
+  patience: 20
+
+# Multi-seed ensemble
+ensemble:
+  enabled: true
+  seeds: [42, 123, 456, 789, 1337]
+  aggregate: "mean"  # mean, vote, stack
+
+seed: 42

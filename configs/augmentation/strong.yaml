@@ -1,0 +1,42 @@
+# Strong Augmentation Configuration
+# ==================================
+# Aggressive augmentation for maximum robustness
+
+name: "strong"
+enabled: true
+
+# Electrode dropout (aggressive)
+electrode_dropout:
+  enabled: true
+  p: 0.2              # 20% electrode dropout
+  structured: true    # Structured (realistic) dropout patterns
+
+# Temporal jitter (aggressive)
+temporal_jitter:
+  enabled: true
+  max_shift_bins: 4   # 100ms jitter
+  wrap: false
+
+# Noise injection (stronger)
+noise:
+  enabled: true
+  type: "gaussian"
+  scale: 0.1
+
+# Spike count scaling (wider range)
+spike_scaling:
+  enabled: true
+  min_scale: 0.8
+  max_scale: 1.2
+
+# Mixup (enabled)
+mixup:
+  enabled: true
+  alpha: 0.3
+
+# Cutout (neural version)
+cutout:
+  enabled: true
+  n_holes: 2
+  hole_size_channels: 10
+  hole_size_time: 3

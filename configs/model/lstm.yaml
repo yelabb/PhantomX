@@ -1,0 +1,24 @@
+# LSTM Baseline Configuration
+# ============================
+# Standard LSTM architecture for comparison
+
+name: "lstm"
+
+# Model class for Hydra instantiation
+_target_: src.models.lstm.LSTMDecoder
+
+# Architecture
+input_dim: null    # Set automatically from dataset
+hidden_dim: 256
+num_layers: 2
+bidirectional: false
+dropout: 0.2
+
+# Output
+output_dim: 2      # Velocity (vx, vy)
+
+# Temporal settings
+window_size: 10    # 10 bins * 25ms = 250ms
+
+# Training
+stateful: false

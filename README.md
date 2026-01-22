@@ -103,53 +103,120 @@ An experimental project exploring:
 
 📓 **[RESEARCH_LOG.md](RESEARCH_LOG.md)** - Detailed experiment notes, results, and analysis
 
-## Project Structure
+## Project Structure (v0.2 - Configuration-Driven)
 
 ```
-python/phantomx/
-    model.py           # ProgressiveVQVAE (MLP-based)
-    models_extended.py # CausalTransformerVQVAE, GumbelVQVAE (best performers)
-    trainer.py         # ProgressiveTrainer (3-phase training)
-    tta.py             # Test-Time Adaptation (TTAWrapper, OnlineTTA)
-    tokenizer/         # Spike tokenization
-    data/              # MC_Maze data loading
-python/
-    exp10_beat_lstm.py # Latest: CausalTransformer + Gumbel experiments
-    compare_models.py  # Model comparisons
-models/
-    exp9_progressive_vqvae.pt   # Progressive VQ-VAE (R²=0.71)
-    comparison_results.json     # All experiment results
+PhantomX/
+├── configs/                    # 🆕 Hydra YAML configurations
+│   ├── config.yaml            # Main config
+│   ├── model/                 # Model configs (vqvae, mamba, lstm, transformer)
+│   ├── dataset/               # Dataset configs (mc_maze, mc_rtt)
+│   ├── trainer/               # Training configs (default, progressive)
+│   ├── augmentation/          # Augmentation configs (none, standard, strong)
+│   └── experiment/            # Experiment presets (exp25_mamba, etc.)
+├── src/                       # 🆕 Unified source code
+│   ├── models/                # Model implementations
+│   ├── datamodules/           # Dataset loading
+│   ├── trainer.py             # Unified trainer
+│   └── utils/                 # Logging, seeding, metrics
+├── train.py                   # 🆕 SINGLE entry point for all experiments
+├── python/                    # Legacy experiment scripts (deprecated)
+├── data/                      # NWB data files
+└── logs/                      # Experiment outputs (auto-generated)
 ```
 
-## Quick Start
+## Quick Start (v0.2)
 
-```python
-from phantomx.model import ProgressiveVQVAE
-from phantomx.trainer import ProgressiveTrainer
-from phantomx.data import MCMazeDataset
-
-# Load data
-dataset = MCMazeDataset("path/to/mc_maze.nwb")
-train_loader, val_loader, test_loader = create_dataloaders(dataset)
-
-# Create and train model
-model = ProgressiveVQVAE(n_channels=142, window_size=10)
-trainer = ProgressiveTrainer(model, train_loader, val_loader)
-result = trainer.train()
-print(f"Best R²: {result['best_r2']:.4f}")
-
-# Test-Time Adaptation for new sessions
-from phantomx.tta import OnlineTTA
-tta = OnlineTTA(model)
-predictions = tta.predict(new_data)
-```
-
-## Setup
+### Installation
 
 ```bash
+# Create environment
 python -m venv venv
 venv\Scripts\activate  # Windows
-pip install -r requirements.txt
+# source venv/bin/activate  # Linux/Mac
+
+# Install with new dependencies
+pip install -e ".[all]"
+
+# Or just core dependencies
+pip install -e .
+```
+
+### Basic Training
+
+```bash
+# Default: VQ-VAE on MC_Maze
+python train.py
+
+# Mamba on MC_RTT (Exp 25)
+python train.py experiment=exp25_mamba
+
+# LSTM baseline
+python train.py model=lstm dataset=mc_maze
+
+# Override hyperparameters
+python train.py model=mamba model.n_layers=6 trainer.learning_rate=1e-4
+
+# Disable WandB for quick tests
+python train.py trainer.max_epochs=5 logging.use_wandb=false
+```
+
+### Multi-Seed Validation (Exp 23 style)
+
+```bash
+# Run with multiple seeds
+python train.py experiment=exp23_validation --multirun seed=42,123,456,789,1337
+```
+
+### Hyperparameter Sweeps
+
+```bash
+# Model comparison
+python train.py --multirun model=vqvae,lstm,mamba dataset=mc_maze
+
+# Full grid search
+python train.py --multirun \
+  model=mamba \
+  model.d_model=64,128,256 \
+  model.n_layers=2,4,6
+```
+
+### Python API
+
+```python
+import hydra
+from omegaconf import OmegaConf
+
+from src.models import build_model
+from src.datamodules import build_datamodule
+from src.trainer import Trainer
+from src.utils import seed_everything
+
+# Load config
+cfg = OmegaConf.load("configs/config.yaml")
+cfg = OmegaConf.merge(cfg, OmegaConf.load("configs/model/mamba.yaml"))
+cfg = OmegaConf.merge(cfg, OmegaConf.load("configs/dataset/mc_rtt.yaml"))
+
+seed_everything(42)
+
+# Build components
+datamodule = build_datamodule(cfg)
+datamodule.setup()
+
+model = build_model(cfg, n_channels=datamodule.n_channels)
+trainer = Trainer(model, datamodule.train_dataloader(), datamodule.val_dataloader(), cfg)
+
+# Train
+results = trainer.train()
+print(f"Best R²: {results['best_r2']:.4f}")
+```
+
+## Legacy Quick Start (v0.1)
+
+```python
+# Still works for backward compatibility
+from python.phantomx.model import ProgressiveVQVAE
+from python.phantomx.trainer import ProgressiveTrainer
 ```
 
 ## Current Status
@@ -192,6 +259,7 @@ This project was developed with assistance from AI coding assistants and workflo
 - Claude Sonnet 4.5 (Anthropic)
 - Gemini 3.0 Pro (Google)
 - GPT 5.2 (OpenAI)
+- Grok Code Fast 1 (xAi)
 
 All code was tested, and validated by the author.
 

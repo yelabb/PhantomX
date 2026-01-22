@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "phantomx"
-version = "0.1.0"
-description = "LaBraM-POYO Neural Foundation Model: Population-geometry BCI decoding with electrode-dropout robustness"
+version = "0.2.0"
+description = "PhantomX: Configuration-Driven Neural Foundation Model for BCI Decoding"
 authors = [
     {name = "Youssef El abbassi", email = "youssef@elabbassi.com"}
 ]
@@ -13,7 +13,7 @@ readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "License :: OSI Approved :: MIT License",
@@ -22,17 +22,32 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
 ]
-keywords = ["bci", "neural-decoding", "vq-vae", "brain-computer-interface", "deep-learning"]
+keywords = ["bci", "neural-decoding", "vq-vae", "mamba", "brain-computer-interface", "deep-learning", "hydra"]
 
 dependencies = [
+    # Core ML
     "torch>=2.1.0",
     "numpy>=1.24.0",
     "scipy>=1.11.0",
+    "scikit-learn>=1.3.0",
+    "einops>=0.7.0",
+    
+    # Data
     "pynwb>=2.5.0",
     "h5py>=3.9.0",
-    "einops>=0.7.0",
+    
+    # Configuration (Hydra)
+    "hydra-core>=1.3.0",
+    "hydra-colorlog>=1.2.0",
+    "omegaconf>=2.3.0",
+    
+    # Experiment Tracking
+    "wandb>=0.16.0",
+    
+    # Utilities
     "matplotlib>=3.7.0",
     "tqdm>=4.66.0",
+    "rich>=13.0.0",
 ]
 
 [project.optional-dependencies]
@@ -59,8 +74,11 @@ notebooks = [
     "seaborn>=0.12.0",
     "plotly>=5.14.0",
 ]
+lightning = [
+    "lightning>=2.1.0",
+]
 all = [
-    "phantomx[dev,onnx,integration,notebooks]",
+    "phantomx[dev,onnx,integration,notebooks,lightning]",
 ]
 
 [project.urls]
@@ -69,14 +87,15 @@ all = [
 "Documentation" = "https://github.com/yelabb/PhantomX#readme"
 
 [project.scripts]
-phantomx-train = "phantomx.cli:train_cli"
-phantomx-test = "phantomx.cli:test_cli"
+phantomx-train = "src.cli:train_cli"
+phantomx-test = "src.cli:test_cli"
 
 [tool.setuptools.packages.find]
-where = ["python"]
+where = ["."]
+include = ["src*", "python*"]
 
 [tool.setuptools.package-dir]
-"" = "python"
+"" = "."
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

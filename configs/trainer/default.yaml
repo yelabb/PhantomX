@@ -1,0 +1,39 @@
+# Default Trainer Configuration
+# ==============================
+# Standard training settings
+
+name: "default"
+
+# Training epochs
+max_epochs: 100
+min_epochs: 10
+
+# Learning rate
+learning_rate: 1e-3
+lr_scheduler: "cosine"  # cosine, step, plateau, none
+lr_warmup_epochs: 5
+lr_min: 1e-6
+
+# Optimizer
+optimizer: "adamw"
+weight_decay: 1e-4
+betas: [0.9, 0.999]
+eps: 1e-8
+
+# Gradient handling
+gradient_clip_val: 1.0
+gradient_clip_algorithm: "norm"  # norm, value
+accumulate_grad_batches: 1
+
+# Early stopping
+early_stopping: true
+patience: 20
+monitor: "val/r2"
+mode: "max"
+
+# Validation
+val_check_interval: 1.0  # Check every epoch
+check_val_every_n_epoch: 1
+
+# Logging
+log_every_n_steps: 10

@@ -1,0 +1,36 @@
+# MC_Maze Dataset Configuration
+# ==============================
+# Motor cortex recordings during maze reaching task
+# From Neural Latents Benchmark (NLB 2021)
+
+name: "mc_maze"
+
+# Dataset class for Hydra instantiation
+_target_: src.datamodules.mc_maze.MCMazeDataModule
+
+# Data paths
+data_dir: ${oc.env:PHANTOMX_DATA_DIR,data}
+filename: "mc_maze.nwb"
+
+# Preprocessing
+bin_size_ms: 25.0    # 40 Hz sampling
+normalize: true       # Z-score normalization
+normalize_per_channel: true
+
+# Splits
+train_ratio: 0.7
+val_ratio: 0.1
+test_ratio: 0.2
+shuffle_before_split: true  # Shuffle trials, not time bins
+
+# DataLoader settings
+batch_size: 64
+shuffle: true        # Shuffle batches during training
+
+# Dataset specifics
+n_channels: 137      # Neural units
+task: "velocity_decoding"
+target_type: "velocity"  # velocity, position, acceleration
+
+# Trial structure
+trial_based: true    # MC_Maze has discrete trials

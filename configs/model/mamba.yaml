@@ -1,0 +1,31 @@
+# Mamba (State Space Model) Configuration
+# ========================================
+# Stateful Mamba architecture for continuous tracking tasks
+# Optimized for MC_RTT based on Exp 25 results
+
+name: "mamba"
+
+# Model class for Hydra instantiation  
+_target_: src.models.mamba.StatefulMamba
+
+# Core S6 (Selective State Space) parameters
+d_model: 128        # Model dimension
+d_state: 16         # SSM state dimension
+d_conv: 4           # Convolution kernel size
+expand: 2           # FFN expansion factor
+n_layers: 4         # Number of Mamba blocks
+
+# Discretization
+dt_min: 0.001
+dt_max: 0.1
+
+# Input/Output
+output_dim: 2       # Velocity (vx, vy)
+dropout: 0.1
+
+# Temporal settings (CRITICAL for MC_RTT)
+window_size: 80     # 80 bins * 25ms = 2 seconds context
+stateful: true      # Maintain hidden state across batches
+
+# Training specifics
+no_shuffle: true    # Sequential batches for stateful training
