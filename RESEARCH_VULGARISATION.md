@@ -287,13 +287,10 @@ If imports fail, the editable install (`pip install -e python/`) is usually the 
 ### 6.2 Make sure you have the dataset
 Many scripts expect an MC_Maze NWB file.
 
-Common paths seen in this repo:
-- `../PhantomLink/data/mc_maze.nwb` (from `QUICK_REFERENCE.md`)
-- A hard-coded local path in some experiment scripts (example: `python/exp3_temporal.py` has `DATA_PATH = "c:/Users/guzzi/.../mc_maze.nwb"`).
+The dataset should be placed at:
+- `data/mc_maze.nwb` (relative to project root)
 
-Practical advice:
-- Pick **one canonical location** for `mc_maze.nwb`.
-- Update the `DATA_PATH` constant inside the scripts you run (or refactor later to use CLI args).
+All experiment scripts use `Path(__file__).parent.parent / "data" / "mc_maze.nwb"` to locate the file automatically.
 
 ### 6.3 Run the “sanity ladder” (recommended order)
 1) Temporal context sanity check:

@@ -63,7 +63,7 @@ class MLPDecoder(nn.Module):
 
 
 def main():
-    DATA_PATH = "c:/Users/guzzi/Desktop/Projects/DEV-ACTIF/NeuraLink/PhantomLink/data/raw/mc_maze.nwb"
+    DATA_PATH = Path(__file__).parent.parent / "data" / "mc_maze.nwb"
     
     print("=" * 60)
     print("Experiment 2: Raw Spikes Baseline")

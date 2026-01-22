@@ -220,7 +220,7 @@ def evaluate(model, test_loader, device):
 # ============================================================
 
 def main():
-    DATA_PATH = "c:/Users/guzzi/Desktop/Projects/DEV-ACTIF/NeuraLink/PhantomLink/data/raw/mc_maze.nwb"
+    DATA_PATH = Path(__file__).parent.parent / "data" / "mc_maze.nwb"
     WINDOW_SIZE = 10
     
     print("=" * 70)

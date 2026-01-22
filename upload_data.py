@@ -13,9 +13,11 @@ import threading
 import time
 import os
 import socket
+from pathlib import Path
 
 # Configuration
-DATA_FILE = r"c:\Users\guzzi\Desktop\Projects\DEV-ACTIF\NeuraLink\PhantomX\data\mc_maze.nwb"
+SCRIPT_DIR = Path(__file__).parent.resolve()
+DATA_FILE = SCRIPT_DIR / "data" / "mc_maze.nwb"
 PORT = 8765
 APP_NAME = "phantomx-gpu"
 

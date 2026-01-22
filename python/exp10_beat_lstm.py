@@ -36,8 +36,8 @@ sys.path.insert(0, str(Path(__file__).parent))
 from phantomx.tokenizer import SpikeTokenizer
 from phantomx.data import MCMazeDataset
 
-# Data path
-DATA_PATH = "c:/Users/guzzi/Desktop/Projects/DEV-ACTIF/NeuraLink/PhantomLink/data/raw/mc_maze.nwb"
+# Data path (relative to project root)
+DATA_PATH = Path(__file__).parent.parent / "data" / "mc_maze.nwb"
 
 
 # ============================================================
