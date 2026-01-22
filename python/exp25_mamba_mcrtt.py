@@ -308,13 +308,17 @@ class S6LayerStateful(nn.Module):
             B_t = B[:, t, :]
             C_t = C[:, t, :]
             
-            # Discretize
+            # Discretize with numerical stability
             dt_A = dt_t.unsqueeze(-1) * A.unsqueeze(0)
+            dt_A = torch.clamp(dt_A, min=-20, max=0)  # Prevent overflow
             A_bar = torch.exp(dt_A)
             B_bar = dt_t.unsqueeze(-1) * B_t.unsqueeze(1)
             
             # State update: h' = A*h + B*x
             h = A_bar * h + B_bar * x_t.unsqueeze(-1)
+            
+            # Clamp hidden state to prevent explosion
+            h = torch.clamp(h, min=-100, max=100)
             
             # Output: y = C*h + D*x
             y_t = torch.einsum("bdn,bn->bd", h, C_t) + D * x_t
@@ -322,7 +326,9 @@ class S6LayerStateful(nn.Module):
         
         # Save state for next call (if stateful)
         if stateful:
-            self.h_state = h.detach()  # Detach to avoid gradient through time beyond window
+            # Clamp before saving
+            h_clamped = torch.clamp(h, min=-100, max=100)
+            self.h_state = h_clamped.detach()  # Detach to avoid gradient through time beyond window
         
         return torch.stack(outputs, dim=1)
 
@@ -591,7 +597,7 @@ def train_stateful_mamba(
     print(f"  Learning rate: {lr}")
     print(f"  State reset: Every {reset_state_every} epoch(s)")
     
-    optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4, eps=1e-7)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs)
     
     best_val_r2 = -float('inf')
@@ -624,8 +630,15 @@ def train_stateful_mamba(
             optimizer.zero_grad()
             output = model(window, stateful=True, targets=velocity)
             loss = output['loss']
+            
+            # Skip if loss is NaN
+            if torch.isnan(loss):
+                print(f"  WARNING: NaN loss at batch {batch_idx}, skipping...")
+                model.reset_state(window.size(0), device)
+                continue
+            
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)  # More aggressive clipping
             optimizer.step()
             
             train_losses.append(loss.item())
@@ -658,9 +671,16 @@ def train_stateful_mamba(
         val_preds = torch.cat(val_preds).numpy()
         val_targets = torch.cat(val_targets).numpy()
         
-        val_r2 = r2_score(val_targets, val_preds)
-        val_r2_vx = r2_score(val_targets[:, 0], val_preds[:, 0])
-        val_r2_vy = r2_score(val_targets[:, 1], val_preds[:, 1])
+        # Check for NaN and handle gracefully
+        if np.isnan(val_preds).any() or np.isnan(val_targets).any():
+            print(f"  WARNING: NaN detected in epoch {epoch}, resetting state...")
+            val_r2, val_r2_vx, val_r2_vy = -1.0, -1.0, -1.0
+            # Reset model state to recover
+            model.reset_state(64, device)
+        else:
+            val_r2 = r2_score(val_targets, val_preds)
+            val_r2_vx = r2_score(val_targets[:, 0], val_preds[:, 0])
+            val_r2_vy = r2_score(val_targets[:, 1], val_preds[:, 1])
         
         # Track best
         if val_r2 > best_val_r2:
