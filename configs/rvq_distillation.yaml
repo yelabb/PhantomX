@@ -1,0 +1,59 @@
+# RVQ Distillation Configuration
+# Based on Experiment 22c: Distill Transformer teacher into RVQ student
+
+name: rvq_distillation
+description: "RVQ-4 student distilled from Transformer teacher"
+
+dataset:
+  name: mc_maze
+  window_size: 10
+  batch_size: 64
+  train_ratio: 0.7
+  val_ratio: 0.15
+  temporal_split: true
+
+# Student model
+encoder:
+  name: mlp
+  hidden_dim: 256
+  n_layers: 3
+  dropout: 0.1
+
+decoder:
+  name: mlp
+  n_layers: 2
+  dropout: 0.1
+
+quantizer:
+  enabled: true
+  name: rvq
+  codebook_size: 128
+  n_layers: 4
+  commitment_cost: 0.25
+
+# Teacher model (for distillation)
+teacher:
+  encoder:
+    name: transformer
+    hidden_dim: 256
+    n_layers: 2
+    n_heads: 4
+  decoder:
+    name: mlp
+    n_layers: 2
+
+training:
+  epochs: 100
+  learning_rate: 0.001
+  weight_decay: 0.00001
+  scheduler: cosine
+  early_stopping: 20
+  seeds: [42, 123, 456, 789, 1337]
+  
+  # Distillation settings
+  distillation:
+    enabled: true
+    temperature: 2.0
+    alpha: 0.7  # Weight for distillation loss vs task loss
+
+output_dir: results

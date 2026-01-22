@@ -1,0 +1,42 @@
+# Progressive VQ-VAE Configuration
+# Based on Experiment 9 breakthrough (R² = 0.70)
+
+name: progressive_vqvae
+description: "Progressive VQ-VAE with pre-training and k-means init"
+
+dataset:
+  name: mc_maze
+  window_size: 10
+  batch_size: 64
+  train_ratio: 0.7
+  val_ratio: 0.15
+  temporal_split: true
+
+encoder:
+  name: lstm
+  hidden_dim: 256
+  n_layers: 2
+  dropout: 0.1
+
+decoder:
+  name: mlp
+  n_layers: 2
+  dropout: 0.1
+
+quantizer:
+  enabled: true
+  name: vq
+  codebook_size: 256
+  commitment_cost: 0.25
+
+training:
+  epochs: 100
+  learning_rate: 0.001
+  weight_decay: 0.00001
+  scheduler: cosine
+  early_stopping: 20
+  progressive: true
+  pretrain_epochs: 30
+  seeds: [42, 123, 456]
+
+output_dir: results

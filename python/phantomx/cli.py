@@ -97,14 +97,78 @@ def cmd_datasets(args):
 
 def cmd_run(args):
     """Handle experiment run commands."""
-    print(f"Running experiment: {args.experiment}")
-    print(f"  Dataset: {args.dataset}")
-    print(f"  Config: {args.config}")
+    from phantomx.config import ExperimentConfig, get_preset, list_presets, PRESETS
+    from phantomx.runner import ExperimentRunner
+    from pathlib import Path
     
-    # TODO: Implement experiment runner
-    print("\n⚠️  Experiment runner not yet implemented.")
-    print("Use individual experiment scripts for now:")
-    print("  python python/exp3_temporal.py")
+    # Load configuration
+    if args.config:
+        # Load from YAML file
+        config_path = Path(args.config)
+        if not config_path.exists():
+            # Try configs/ directory
+            config_path = Path("configs") / args.config
+            if not config_path.suffix:
+                config_path = config_path.with_suffix(".yaml")
+        
+        if not config_path.exists():
+            print(f"Error: config file not found: {args.config}")
+            sys.exit(1)
+        
+        print(f"Loading config from: {config_path}")
+        config = ExperimentConfig.from_yaml(str(config_path))
+    
+    elif args.preset:
+        # Use preset
+        if args.preset == "list":
+            list_presets()
+            return
+        
+        try:
+            config = get_preset(args.preset)
+        except KeyError as e:
+            print(f"Error: {e}")
+            print("Available presets:")
+            list_presets()
+            sys.exit(1)
+    
+    else:
+        # Default: list available options
+        print("Usage:")
+        print("  phantomx run --config configs/lstm_baseline.yaml")
+        print("  phantomx run --preset lstm_baseline")
+        print("\nAvailable configs:")
+        configs_dir = Path("configs")
+        if configs_dir.exists():
+            for f in sorted(configs_dir.glob("*.yaml")):
+                print(f"  {f.stem}")
+        print("\nAvailable presets:")
+        list_presets()
+        return
+    
+    # Override dataset if specified
+    if args.dataset:
+        config.dataset.name = args.dataset
+    
+    # Override seeds if specified
+    if args.seeds:
+        config.training.seeds = [int(s) for s in args.seeds.split(",")]
+    
+    # Run experiment
+    runner = ExperimentRunner(config)
+    results = runner.run()
+    
+    print("\n" + "=" * 60)
+    print("FINAL RESULTS")
+    print("=" * 60)
+    print(f"Test R² = {results['test_r2_mean']:.4f} ± {results['test_r2_std']:.4f}")
+    print(f"Range: [{results['test_r2_min']:.4f}, {results['test_r2_max']:.4f}]")
+
+
+def cmd_models(args):
+    """List available models."""
+    from phantomx.models import list_models
+    list_models()
 
 
 def cmd_compare(args):
@@ -135,12 +199,15 @@ def main():
     
     # === run ===
     run_parser = subparsers.add_parser("run", help="Run experiments")
-    run_parser.add_argument("experiment", help="Experiment name (e.g., baseline, vqvae)")
-    run_parser.add_argument("--dataset", "-d", default="mc_maze",
-                           help="Dataset to use")
-    run_parser.add_argument("--config", "-c", help="Config file path")
-    run_parser.add_argument("--seed", "-s", type=int, default=42)
+    run_parser.add_argument("--config", "-c", help="Config YAML file path")
+    run_parser.add_argument("--preset", "-p", help="Use a preset config (or 'list')")
+    run_parser.add_argument("--dataset", "-d", help="Override dataset")
+    run_parser.add_argument("--seeds", "-s", help="Override seeds (comma-separated)")
     run_parser.set_defaults(func=cmd_run)
+    
+    # === models ===
+    models_parser = subparsers.add_parser("models", help="List available models")
+    models_parser.set_defaults(func=cmd_models)
     
     # === compare ===
     cmp_parser = subparsers.add_parser("compare", help="Compare results")

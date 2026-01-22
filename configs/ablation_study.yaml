@@ -1,0 +1,51 @@
+# Ablation Study Configuration
+# Systematically test encoder/quantizer combinations
+
+name: ablation_study
+description: "Ablation study: encoder × quantizer combinations"
+
+dataset:
+  name: mc_maze
+  window_size: 10
+  batch_size: 64
+  temporal_split: true
+
+# Will sweep over these
+sweep:
+  encoder:
+    - name: mlp
+      hidden_dim: 256
+      n_layers: 2
+    - name: lstm
+      hidden_dim: 256
+      n_layers: 2
+    - name: transformer
+      hidden_dim: 256
+      n_layers: 2
+      n_heads: 4
+  
+  quantizer:
+    - enabled: false
+    - enabled: true
+      name: vq
+      codebook_size: 256
+    - enabled: true
+      name: rvq
+      codebook_size: 128
+      n_layers: 4
+    - enabled: true
+      name: fsq
+      levels: 8
+
+decoder:
+  name: mlp
+  n_layers: 2
+  dropout: 0.1
+
+training:
+  epochs: 50  # Shorter for ablation
+  learning_rate: 0.001
+  early_stopping: 15
+  seeds: [42, 123, 456]
+
+output_dir: results/ablation

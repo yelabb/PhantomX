@@ -1,0 +1,37 @@
+# LSTM Baseline Configuration
+# This is the validated best model for MC_Maze (R² = 0.80 ± 0.009)
+
+name: lstm_baseline
+description: "LSTM baseline for velocity decoding - validated winner"
+
+dataset:
+  name: mc_maze
+  window_size: 10  # 250ms at 40Hz
+  batch_size: 64
+  train_ratio: 0.7
+  val_ratio: 0.15
+  temporal_split: true
+
+encoder:
+  name: lstm
+  hidden_dim: 256
+  n_layers: 2
+  dropout: 0.1
+
+decoder:
+  name: mlp
+  n_layers: 2
+  dropout: 0.1
+
+quantizer:
+  enabled: false
+
+training:
+  epochs: 100
+  learning_rate: 0.001
+  weight_decay: 0.00001
+  scheduler: cosine
+  early_stopping: 20
+  seeds: [42, 123, 456, 789, 1337]
+
+output_dir: results

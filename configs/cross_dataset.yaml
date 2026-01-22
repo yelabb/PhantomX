@@ -1,0 +1,38 @@
+# Cross-Dataset Experiment
+# Test if MC_Maze model generalizes to MC_RTT
+
+name: cross_dataset_transfer
+description: "Test generalization from MC_Maze to MC_RTT"
+
+# Train on MC_Maze
+train_dataset:
+  name: mc_maze
+  window_size: 10
+  batch_size: 64
+
+# Evaluate on MC_RTT (more challenging)
+eval_datasets:
+  - name: mc_rtt
+  - name: area2_bump
+
+encoder:
+  name: lstm
+  hidden_dim: 256
+  n_layers: 2
+  dropout: 0.1
+
+decoder:
+  name: mlp
+  n_layers: 2
+  dropout: 0.1
+
+quantizer:
+  enabled: false
+
+training:
+  epochs: 100
+  learning_rate: 0.001
+  early_stopping: 20
+  seeds: [42, 123, 456]
+
+output_dir: results/cross_dataset
