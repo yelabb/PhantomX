@@ -2443,3 +2443,22 @@ split = 70% train / 15% val / 15% test (sequential)
 
 ---
 
+## 🎰 Architecture Roulette — Time to Build Intuition
+**Date**: 2026-01-23
+
+We've been spinning the wheel: LSTM → Transformer → Mamba → VQ-VAE → FSQ → distillation... Each architecture wins on one dataset, fails on another. We're pattern-matching configurations without understanding **why** they work.
+
+**The problem**: We lack intuition for neural signal structure.
+
+**The plan**: Step back from BCI decoding and build fundamental intuition on a simpler domain — **music**. Audio has:
+- Clear temporal structure (rhythm, melody)
+- Multi-scale patterns (beats → bars → phrases)
+- Well-understood representations (spectrograms, MFCCs)
+- Easy human evaluation (does it sound right?)
+
+If we can develop intuition for temporal tokenization on music, we can transfer those insights back to neural data.
+
+**New repo**: https://github.com/yelabb/PhantomMusic
+
+---
+
