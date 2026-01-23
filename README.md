@@ -5,9 +5,10 @@
 > 📓 **[RESEARCH_LOG.md](RESEARCH_LOG.md)** - Detailed experiment notes, results, and analysis
 
 
-PhantomX — Neural Decoding as a Codec: Quantized Latent Representations for Robust BCI
+PhantomX — On the Limits of Discrete Representations for Neural Control. A systematic empirical study of tokenization, quantization, and inductive bias in BCI
 
-<img width="900" alt="image" src="https://github.com/user-attachments/assets/92cc2a54-26c8-48ae-bebb-34bd9925c11d" />
+<img width="900" alt="image" src="https://github.com/user-attachments/assets/249ccf49-29f7-435e-bad2-b94d91959da3" />
+
 
 ## 🎯 Results
 
@@ -216,6 +217,7 @@ If you use this work in your research, please cite:
 
 
 https://github.com/user-attachments/assets/3efa947c-cd41-4606-8f38-a50026513ca1
+
 
 
 
