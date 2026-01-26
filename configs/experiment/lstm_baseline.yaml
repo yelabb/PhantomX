@@ -1,0 +1,36 @@
+# @package _global_
+# ==================================================
+# LSTM Baseline Experiment
+# ==================================================
+# Standard LSTM for comparison
+# Establishes baseline performance
+
+defaults:
+  - override /model: lstm
+  - override /dataset: mc_maze
+  - override /trainer: default
+  - override /augmentation: none
+
+experiment_name: "lstm_baseline"
+notes: |
+  LSTM Baseline
+  - Standard 2-layer LSTM
+  - No augmentation (fair comparison)
+  - Baseline for other experiments
+
+model:
+  hidden_dim: 256
+  num_layers: 2
+  dropout: 0.2
+  window_size: 10
+
+dataset:
+  batch_size: 64
+  shuffle: true
+
+trainer:
+  max_epochs: 100
+  learning_rate: 1e-3
+  patience: 20
+
+seed: 42

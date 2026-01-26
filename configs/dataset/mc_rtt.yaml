@@ -1,0 +1,37 @@
+# MC_RTT Dataset Configuration
+# =============================
+# Motor cortex Random Target Tracking task
+# Continuous tracking - fundamentally different from MC_Maze
+
+name: "mc_rtt"
+
+# Dataset class for Hydra instantiation
+_target_: src.datamodules.mc_rtt.MCRTTDataModule
+
+# Data paths
+data_dir: ${oc.env:PHANTOMX_DATA_DIR,data}
+filename: "mc_rtt.nwb"
+
+# Preprocessing
+bin_size_ms: 25.0    # 40 Hz sampling
+normalize: true
+normalize_per_channel: true
+
+# Splits (CRITICAL: sequential for continuous data)
+train_ratio: 0.7
+val_ratio: 0.1
+test_ratio: 0.2
+shuffle_before_split: false  # Keep temporal order!
+
+# DataLoader settings
+batch_size: 32
+shuffle: false       # Sequential batches for stateful models
+
+# Dataset specifics
+n_channels: 130      # Neural units (different from MC_Maze)
+task: "velocity_decoding"
+target_type: "finger_velocity"  # Uses finger_vel, not hand_vel
+
+# Continuous structure
+trial_based: false   # Continuous tracking, no discrete trials
+continuous: true     # Enable overlapping windows

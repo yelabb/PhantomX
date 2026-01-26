@@ -1,0 +1,6 @@
+# No Augmentation Configuration
+# ==============================
+# Baseline: no data augmentation
+
+name: "none"
+enabled: false

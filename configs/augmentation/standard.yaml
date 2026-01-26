@@ -1,0 +1,35 @@
+# Standard Augmentation Configuration
+# ====================================
+# Data augmentation techniques from successful experiments
+
+name: "standard"
+enabled: true
+
+# Electrode dropout (key for robustness)
+electrode_dropout:
+  enabled: true
+  p: 0.1              # Probability of dropping each electrode
+  structured: false   # Random vs structured dropout
+
+# Temporal jitter
+temporal_jitter:
+  enabled: true
+  max_shift_bins: 2   # Max bins to shift (50ms at 25ms bins)
+  wrap: false         # Wrap around or zero-pad
+
+# Noise injection
+noise:
+  enabled: true
+  type: "gaussian"    # gaussian, poisson
+  scale: 0.05         # Noise scale
+
+# Spike count scaling
+spike_scaling:
+  enabled: true
+  min_scale: 0.9
+  max_scale: 1.1
+
+# Mixup (disabled by default)
+mixup:
+  enabled: false
+  alpha: 0.2

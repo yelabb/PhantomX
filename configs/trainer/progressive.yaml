@@ -1,0 +1,43 @@
+# Progressive Training Configuration
+# ===================================
+# Three-phase training for VQ-VAE models
+
+name: "progressive"
+
+# Phase 1: Pre-training (encoder only)
+pretrain:
+  epochs: 30
+  learning_rate: 1e-3
+  freeze_quantizer: true
+  description: "Pre-train encoder without VQ"
+
+# Phase 2: Codebook initialization
+init_codebook:
+  method: "kmeans"
+  n_init: 10
+  max_iter: 300
+  description: "K-means initialization from encoder outputs"
+
+# Phase 3: Fine-tuning (full model)
+finetune:
+  epochs: 50
+  learning_rate: 3e-4
+  freeze_quantizer: false
+  description: "Fine-tune with VQ enabled"
+
+# Optimizer (shared)
+optimizer: "adamw"
+weight_decay: 1e-4
+
+# Learning rate schedule
+lr_scheduler: "cosine"
+lr_warmup_epochs: 3
+
+# Early stopping (per phase)
+early_stopping: true
+patience: 15
+monitor: "val/r2"
+mode: "max"
+
+# Gradient handling
+gradient_clip_val: 1.0

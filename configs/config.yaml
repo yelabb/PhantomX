@@ -1,0 +1,51 @@
+# PhantomX Main Configuration
+# ============================
+# Default configuration for all experiments.
+# Override via command line: python train.py model=mamba dataset=mc_rtt
+
+defaults:
+  - _self_
+  - model: vqvae          # Default model
+  - dataset: mc_maze      # Default dataset
+  - trainer: default      # Default trainer settings
+  - augmentation: none    # No augmentation by default
+  - optional experiment: null  # Override everything for specific experiments
+
+# ===== General Settings =====
+seed: 42
+output_dir: ${hydra:run.dir}
+project_name: "PhantomX"
+experiment_name: "${model.name}_${dataset.name}"
+
+# ===== Logging =====
+logging:
+  use_wandb: true
+  wandb_project: "PhantomX"
+  wandb_entity: null  # Your wandb username/team
+  log_every_n_steps: 10
+  save_checkpoints: true
+  checkpoint_every_n_epochs: 10
+
+# ===== Reproducibility =====
+reproducibility:
+  deterministic: true
+  benchmark: false  # Set true for faster training if input sizes don't change
+  save_git_hash: true
+  save_config: true  # Hydra does this automatically
+
+# ===== Hardware =====
+hardware:
+  device: "auto"  # auto, cuda, cpu, mps
+  num_workers: 4
+  pin_memory: true
+  precision: 32  # 16, 32, or "bf16"
+
+# ===== Hydra Settings =====
+hydra:
+  run:
+    dir: logs/${experiment_name}/${now:%Y-%m-%d_%H-%M-%S}
+  sweep:
+    dir: logs/sweeps/${experiment_name}
+    subdir: ${hydra.job.num}
+  job:
+    chdir: false  # Don't change working directory
